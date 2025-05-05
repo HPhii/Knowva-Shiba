@@ -5,9 +5,9 @@ import com.example.demo.model.io.request.RegisterRequest;
 import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.request.LoginRequest;
 import com.example.demo.repository.AccountRepository;
-import com.example.demo.service.impl.AccountServiceImpl;
-import com.example.demo.service.impl.AuthenticationServiceImpl;
-import com.example.demo.service.impl.TokenServiceImpl;
+import com.example.demo.service.AccountService;
+import com.example.demo.service.AuthenticationService;
+import com.example.demo.service.TokenService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,13 +24,13 @@ import java.util.Map;
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
 public class AuthenticationAPI {
-    private final AccountServiceImpl accountService;
+    private final AccountService accountService;
 
-    private final AuthenticationServiceImpl authenticationService;
+    private final AuthenticationService authenticationService;
 
     private final Filter filter;
 
-    private final TokenServiceImpl tokenService;
+    private final TokenService tokenService;
 
     private final AccountRepository accountRepository;
 

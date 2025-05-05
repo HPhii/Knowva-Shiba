@@ -1,9 +1,8 @@
-package com.example.demo.service.impl;
+package com.example.demo.service;
 
 import com.example.demo.exception.AuthException;
 import com.example.demo.model.entity.Account;
 import com.example.demo.repository.AccountRepository;
-import com.example.demo.service.itf.TokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -19,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
-public class TokenServiceImpl implements TokenService {
+public class TokenService {
     private final String SECRET_KEY = "hieuphinehehe070520030937874259hieuphinehehe";
     private final Map<String, LocalDateTime> tokenBlacklist = new ConcurrentHashMap<>();
 
@@ -30,7 +29,6 @@ public class TokenServiceImpl implements TokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    @Override
     public String generateToken(Account account) {
         String token = Jwts.builder()
                 .subject(account.getId()+"")
@@ -41,7 +39,6 @@ public class TokenServiceImpl implements TokenService {
         return token;
     }
 
-    @Override
     public Account getAccountByToken(String token) {
         if (isTokenBlacklisted(token)) {
             throw new AuthException("Token has been invalidated!");
@@ -59,7 +56,6 @@ public class TokenServiceImpl implements TokenService {
         return accountRepository.findAccountById(id);
     }
 
-    @Override
     public void invalidateToken(String token) {
         // Blacklist the token with its expiry time.
         tokenBlacklist.put(token, LocalDateTime.now().plusHours(1)); // Optional: token lifespan.

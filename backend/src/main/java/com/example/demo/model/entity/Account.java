@@ -6,10 +6,7 @@ import com.example.demo.model.enums.Status;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,11 +16,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Data
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "accounts")
 public class Account implements UserDetails {
 
@@ -128,5 +126,10 @@ public class Account implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.status == Status.ACTIVE;
+    }
+
+    @JsonIgnore
+    public User getUser() {
+        return this.user;
     }
 }

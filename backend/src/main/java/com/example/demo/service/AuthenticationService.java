@@ -1,4 +1,4 @@
-package com.example.demo.service.impl;
+package com.example.demo.service;
 
 import com.example.demo.exception.DuplicateEntity;
 import com.example.demo.exception.EntityNotFoundException;
@@ -14,7 +14,6 @@ import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.itf.AuthenticationService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -22,6 +21,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,19 +39,24 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationServiceImpl implements AuthenticationService, UserDetailsService {
+public class AuthenticationService implements UserDetailsService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailServiceImpl emailService;
-    private final TokenServiceImpl tokenService;
-    private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final TokenService tokenService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    //    @Autowired
+//    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+//        this.authenticationManager = authenticationManager;
+//    }
     private static final String WELCOME_SUBJECT = "ABC";
     private static final String WELCOME_TEMPLATE = "welcome-template";
 
-    @Override
     public AccountResponse register(RegisterRequest registerRequestDTO) {
         if (!registerRequestDTO.getPassword().equals(registerRequestDTO.getConfirmPassword())) {
             throw new PasswordMismatchEntity("Passwords do not match!");
@@ -78,7 +83,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, UserDet
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .user(newUser)
-                .isVerified( false)
+                .isVerified(false)
                 .build();
 
         Account newAccount = accountRepository.save(account);
@@ -88,6 +93,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, UserDet
                 .email(newAccount.getEmail())
                 .username(newAccount.getUsername())
                 .userId(newUser.getId())
+                .isVerified(newAccount.getIsVerified())
                 .build();
 
         sendMail(newAccount);
@@ -108,7 +114,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, UserDet
         }
     }
 
-    @Override
     public AccountResponse login(LoginRequest loginRequestDTO) {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -118,10 +123,16 @@ public class AuthenticationServiceImpl implements AuthenticationService, UserDet
 
             // => tài khoản có tồn tại
             Account account = (Account) authentication.getPrincipal();
-            AccountResponse accountResponse = modelMapper.map(account, AccountResponse.class);
-            accountResponse.setUserId(account.getUser().getId());
-            accountResponse.setToken(tokenService.generateToken(account));
-            return accountResponse;
+
+            return AccountResponse.builder()
+                    .accountId(account.getId())
+                    .username(account.getUsername())
+                    .email(account.getEmail())
+                    .role(account.getRole())
+                    .isVerified(account.getIsVerified())
+                    .userId(account.getUser() != null ? account.getUser().getId() : null)
+                    .token(tokenService.generateToken(account))
+                    .build();
         } catch (Exception e) {
             throw new EntityNotFoundException("Incorrect Username or Password");
         }
@@ -142,7 +153,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, UserDet
         return uniqueUsername;
     }
 
-    @Override
     public AccountResponse loginGoogle(String googleToken) {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList("472892753586-grlnbpao8omb8dr1hfk57o87iujm54dg.apps.googleusercontent.com"))
