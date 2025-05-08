@@ -1,11 +1,14 @@
 package com.example.demo.config;
 
 import com.cloudinary.Cloudinary;
+import com.example.demo.service.AuthenticationService;
+import com.example.demo.service.AuthenticationUserDetailsService;
 import com.example.demo.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,14 +29,12 @@ import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-//    private final AuthenticationService authenticationService;
+    private final AuthenticationUserDetailsService userDetailsService;
 
     private final Filter filter;
 
@@ -47,11 +48,6 @@ public class SecurityConfig {
         return new ModelMapper();
     }
 
-//    @Bean
-//    public UserDetailsService userDetailsService(AuthenticationServiceImpl authServiceImpl) {
-//        return authServiceImpl;
-//    }
-
     @Bean
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService() {
         return new CustomOAuth2UserService();
@@ -60,16 +56,6 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public Cloudinary getCloudinary() {
-        Map config = new HashMap();
-        config.put("cloud_name", "dg0dwfewe");
-        config.put("api_key", "455981336253128");
-        config.put("api_secret", "2hggg5_hioqXjN4HuvPVWKTWcFA");
-        config.put("secure", true);
-        return new Cloudinary(config);
     }
 
     @Bean
@@ -89,7 +75,7 @@ public class SecurityConfig {
                         )
                         .successHandler(this::oauth2SuccessHandler) // Custom success handler
                 )
-//                .userDetailsService(authenticationService)
+                .userDetailsService(userDetailsService)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .build();

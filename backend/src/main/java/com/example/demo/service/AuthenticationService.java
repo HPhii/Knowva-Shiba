@@ -39,21 +39,16 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService implements UserDetailsService {
+public class AuthenticationService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TokenService tokenService;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
-    //    @Autowired
-//    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
-//        this.authenticationManager = authenticationManager;
-//    }
     private static final String WELCOME_SUBJECT = "ABC";
     private static final String WELCOME_TEMPLATE = "welcome-template";
 
@@ -194,10 +189,5 @@ public class AuthenticationService implements UserDetailsService {
         AccountResponse accountResponse = modelMapper.map(account, AccountResponse.class);
         accountResponse.setToken(tokenService.generateToken(account));
         return accountResponse;
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return accountRepository.findAccountByEmail(email);
     }
 }
