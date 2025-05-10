@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -19,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @RequiredArgsConstructor
 public class TokenService {
-    private final String SECRET_KEY = "hieuphinehehe070520030937874259hieuphinehehe";
+    @Value("${jwt.secret.key}")
+    private String SECRET_KEY;
     private final Map<String, LocalDateTime> tokenBlacklist = new ConcurrentHashMap<>();
 
     private final AccountRepository accountRepository;

@@ -1,7 +1,7 @@
 package com.example.demo.config;
 
 import com.cloudinary.Cloudinary;
-import com.google.api.client.util.Value;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

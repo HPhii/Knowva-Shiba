@@ -25,13 +25,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthenticationAPI {
     private final AccountService accountService;
-
     private final AuthenticationService authenticationService;
-
     private final Filter filter;
-
     private final TokenService tokenService;
-
     private final AccountRepository accountRepository;
 
     @PostMapping("/register")
@@ -52,7 +48,7 @@ public class AuthenticationAPI {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
-        String token = filter.getToken(request); // Reuse your existing method to extract the token.
+        String token = filter.getToken(request);
         if (token != null) {
             tokenService.invalidateToken(token); // Add logic to blacklist the token.
             return ResponseEntity.ok("Logged out successfully.");
@@ -60,7 +56,7 @@ public class AuthenticationAPI {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request or token missing.");
     }
 
-    @PostMapping("/login/google")
+    @PostMapping("/google")
     public ResponseEntity<AccountResponse> googleLogin(@RequestBody Map<String, String> tokenData) {
         String googleToken = tokenData.get("token");
         AccountResponse account = authenticationService.loginGoogle(googleToken);

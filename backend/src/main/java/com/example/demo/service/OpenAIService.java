@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class OpenAIService {
-
     private final ChatModel chatModel;
 
     public Answer getResult(Question question) {
