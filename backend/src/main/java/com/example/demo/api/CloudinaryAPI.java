@@ -1,6 +1,6 @@
 package com.example.demo.api;
 
-import com.example.demo.service.CloudinaryService;
+import com.example.demo.service.intface.ICloudinaryService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class CloudinaryAPI {
-    private final CloudinaryService cloudinaryService;
+    private final ICloudinaryService cloudinaryService;
 
     @PostMapping("/cloudinary/upload")
     public ResponseEntity<Map> uploadImage(@RequestParam("image") MultipartFile file){
