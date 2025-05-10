@@ -52,16 +52,12 @@ public class AuthenticationService implements IAuthenticationService {
     private static final String WELCOME_TEMPLATE = "welcome-template";
 
     @Override
-    public AccountResponse register(RegisterRequest registerRequestDTO) {
-        if (!registerRequestDTO.getPassword().equals(registerRequestDTO.getConfirmPassword())) {
-            throw new PasswordMismatchEntity("Passwords do not match!");
-        }
-
-        if (accountRepository.existsByEmail(registerRequestDTO.getEmail())) {
+    public AccountResponse register(RegisterRequest request) {
+        if (accountRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateEntity("This email is already registered!!!");
         }
 
-        if (accountRepository.existsByUsername(registerRequestDTO.getUsername())) {
+        if (accountRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateEntity("This username is already used by others!!");
         }
 
@@ -69,9 +65,9 @@ public class AuthenticationService implements IAuthenticationService {
         userRepository.save(newUser);
 
         Account account = Account.builder()
-                .username(registerRequestDTO.getUsername())
-                .email(registerRequestDTO.getEmail())
-                .password(passwordEncoder.encode(registerRequestDTO.getPassword()))
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .status(Status.ACTIVE)
                 .role(Role.USER)
                 .loginProvider(LoginProvider.EMAIL)
