@@ -74,7 +74,7 @@ public class Account implements UserDetails {
 
     @JsonIgnore
     @Column(name = "verify_otp_expired_at")
-    private LocalDateTime verifyOtpExpiredAt;
+    private long verifyOtpExpiredAt;
 
     @JsonIgnore
     @Column(name = "reset_otp")
@@ -82,7 +82,7 @@ public class Account implements UserDetails {
 
     @JsonIgnore
     @Column(name = "reset_otp_expired_at")
-    private LocalDateTime resetOtpExpiredAt;
+    private long resetOtpExpiredAt;
 
     @PrePersist
     protected void onCreate() {

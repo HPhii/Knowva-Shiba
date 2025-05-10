@@ -31,7 +31,10 @@ public class Filter extends OncePerRequestFilter {
             "/api/register",
             "/api/login",
             "/api/google",
-            "/api/test"
+            "/api/send-verify-otp",
+            "/api/verify-email",
+            "/api/send-reset-otp",
+            "/api/reset-password"
     );
 
     private final ITokenService tokenService;
