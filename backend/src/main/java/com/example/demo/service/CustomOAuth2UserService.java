@@ -18,12 +18,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
-
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private TokenService tokenService;
+    private final AccountRepository accountRepository;
+    private final TokenService tokenService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {

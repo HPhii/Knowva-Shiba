@@ -8,14 +8,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/openai")
+@RequestMapping("/api")
 @CrossOrigin("*")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class OpenAIAPI {
     private final OpenAIService openAIService;
 
-    @PostMapping
+    @PostMapping("/openai")
     public Answer getAnswer(@RequestBody Question question) {
         return openAIService.getResult(question);
     }

@@ -21,13 +21,9 @@ import com.google.api.client.json.gson.GsonFactory;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -129,7 +125,7 @@ public class AuthenticationService {
                     .token(tokenService.generateToken(account))
                     .build();
         } catch (Exception e) {
-            throw new EntityNotFoundException("Incorrect Username or Password");
+            throw new EntityNotFoundException("Incorrect Email or Password");
         }
     }
 
