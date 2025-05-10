@@ -91,7 +91,7 @@ public class AuthenticationService implements IAuthenticationService {
                 .isVerified(newAccount.getIsVerified())
                 .build();
 
-        sendMail(newAccount);
+//        sendMail(newAccount);
 
         return accountResponse;
     }

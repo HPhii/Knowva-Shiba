@@ -9,4 +9,9 @@ public interface IAccountService {
     List<Account> getAllAccount();
     Account getCurrentAccount();
     AccountResponse getCurrentAccountResponse();
+    void sendResetOtp(String email);
+    void resetPassword(String email, String otp, String newPassword);
+    void sendVerifyOtp(String email);
+    void verifyEmail(String email, String otp);
+    long getLoggedInAccountId(String email);
 }
