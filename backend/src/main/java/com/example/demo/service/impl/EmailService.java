@@ -1,6 +1,7 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.model.io.response.object.EmailDetails;
+import com.example.demo.service.intface.IEmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,11 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService {
+public class EmailService implements IEmailService {
     private final TemplateEngine templateEngine;
     private final JavaMailSender mailSender;
 
+    @Override
     public void sendMail(EmailDetails emailDetails, String templateName, Map<String, Object> contextVariables) throws MessagingException {
         try {
             // Create the context for Thymeleaf template

@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.exception.DuplicateEntity;
 import com.example.demo.exception.EntityNotFoundException;
@@ -14,6 +14,9 @@ import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.IAuthenticationService;
+import com.example.demo.service.intface.IEmailService;
+import com.example.demo.service.intface.ITokenService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -35,19 +38,20 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService {
+public class AuthenticationService implements IAuthenticationService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
-    private final TokenService tokenService;
+    private final IEmailService emailService;
+    private final ITokenService tokenService;
     private final AuthenticationManager authenticationManager;
 
 
     private static final String WELCOME_SUBJECT = "ABC";
     private static final String WELCOME_TEMPLATE = "welcome-template";
 
+    @Override
     public AccountResponse register(RegisterRequest registerRequestDTO) {
         if (!registerRequestDTO.getPassword().equals(registerRequestDTO.getConfirmPassword())) {
             throw new PasswordMismatchEntity("Passwords do not match!");
@@ -105,6 +109,7 @@ public class AuthenticationService {
         }
     }
 
+    @Override
     public AccountResponse login(LoginRequest loginRequestDTO) {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -144,6 +149,7 @@ public class AuthenticationService {
         return uniqueUsername;
     }
 
+    @Override
     public AccountResponse loginGoogle(String googleToken) {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList("472892753586-grlnbpao8omb8dr1hfk57o87iujm54dg.apps.googleusercontent.com"))

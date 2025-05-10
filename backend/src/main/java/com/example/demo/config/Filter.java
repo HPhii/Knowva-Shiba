@@ -2,7 +2,7 @@ package com.example.demo.config;
 
 import com.example.demo.model.entity.Account;
 import com.example.demo.exception.AuthException;
-import com.example.demo.service.TokenService;
+import com.example.demo.service.intface.ITokenService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
@@ -34,7 +34,7 @@ public class Filter extends OncePerRequestFilter {
             "/api/test"
     );
 
-    private final TokenService tokenService;
+    private final ITokenService tokenService;
 
 
 //    @Qualifier("handlerExceptionResolver")

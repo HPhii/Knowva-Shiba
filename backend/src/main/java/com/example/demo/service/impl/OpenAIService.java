@@ -1,7 +1,8 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.model.immutableDTOs.Answer;
 import com.example.demo.model.immutableDTOs.Question;
+import com.example.demo.service.intface.IOpenAIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -12,9 +13,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class OpenAIService {
+public class OpenAIService implements IOpenAIService {
     private final ChatModel chatModel;
 
+    @Override
     public Answer getResult(Question question) {
         Prompt prompt = new PromptTemplate(question.question()).create();
 
