@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,6 +38,9 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final Filter filter;
 
+    @Value("${client.url}")
+    private String clientUrl;
+
     @Bean // -> Biến function thành thư viện
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -55,7 +59,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of(clientUrl));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -93,7 +97,7 @@ public class SecurityConfig {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String token = (String) oAuth2User.getAttributes().get("token");
 
-        String redirectUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/")
+        String redirectUrl = UriComponentsBuilder.fromUriString(clientUrl)
                 .queryParam("token", token)
                 .build().toUriString();
 
