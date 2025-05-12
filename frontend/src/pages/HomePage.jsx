@@ -1,80 +1,47 @@
-import { motion } from 'framer-motion'
-import { formatDate } from '../utils/date'
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const HomePage = () => {
-  const { user, logout } = useAuthStore()
-
-  const handleLogout = () => {
-    logout()
-  }
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-md w-full mx-auto mt-10 p-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl shadow-2xl border border-gray-800"
+      className='w-full h-screen bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl flex flex-col items-center justify-center'
     >
-      <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">
-        Dashboard
-      </h2>
+      <div className='text-center text-white px-8'>
+        <h1 className='text-4xl font-bold mb-4 bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text'>
+          Welcome to Our Platform
+        </h1>
+        <p className='text-lg mb-6'>
+          Join us to experience the best services and features we have to offer.
+        </p>
 
-      <div className="space-y-6">
-        <motion.div
-          className="p-4 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className='py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200'
         >
-          <h3 className="text-xl font-semibold text-green-400 mb-3">
-            Profile Information
-          </h3>
-          <p className="text-gray-300">Name: {user.name}</p>
-          <p className="text-gray-300">Email: {user.email}</p>
-        </motion.div>
-        <motion.div
-          className="p-4 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <h3 className="text-xl font-semibold text-green-400 mb-3">
-            Account Activity
-          </h3>
-          <p className="text-gray-300">
-            <span className="font-bold">Joined: </span>
-            {new Date(user.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
-          <p className="text-gray-300">
-            <span className="font-bold">Last Login: </span>
+          <Link to='/signup'>Get Started</Link>
+        </motion.button>
 
-            {formatDate(user.lastLogin)}
+        <div className='mt-6'>
+          <p className='text-sm text-gray-400'>
+            Already have an account?{" "}
+            <Link to='/login' className='text-green-400 hover:underline'>
+              Log in
+            </Link>
           </p>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mt-4"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleLogout}
-          className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
-				font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700
-				 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-        >
-          Logout
-        </motion.button>
-      </motion.div>
+      <div className='absolute bottom-10 text-center w-full'>
+        <p className='text-sm text-gray-400'>
+          &copy; 2025 Our Platform. All rights reserved.
+        </p>
+      </div>
     </motion.div>
-  )
-}
-export default HomePage
+  );
+};
+
+export default HomePage;
