@@ -1,0 +1,65 @@
+package com.example.demo.model.entity.quiz;
+
+import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.SourceType;
+import com.example.demo.model.enums.Visibility;
+import com.example.demo.model.enums.QuestionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "quiz_sets")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class QuizSet {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User owner;
+
+    private String title;
+
+    @Enumerated(EnumType.STRING)
+    private SourceType sourceType;
+
+    private String language;
+
+    @Enumerated(EnumType.STRING)
+    private QuestionType questionType;
+
+    private Integer maxQuestions;
+
+    @Enumerated(EnumType.STRING)
+    private Visibility visibility;
+
+    private Boolean shuffleQuestions;
+
+    private Integer timeLimit;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<QuizQuestion> questions;
+
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<QuizAttempt> attempts;
+
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<QuizAccessControl> accessControlList;
+}

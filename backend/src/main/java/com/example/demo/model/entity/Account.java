@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
@@ -16,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Setter
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
 @Entity
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 @Table(name = "accounts")
 public class Account implements UserDetails {
 
@@ -31,7 +30,7 @@ public class Account implements UserDetails {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = true)
+    @JoinColumn(name = "user_id")
     @JsonIgnore
     private User user;
 
@@ -41,7 +40,7 @@ public class Account implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = true)
+    @Column
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -49,40 +48,39 @@ public class Account implements UserDetails {
     private LoginProvider loginProvider;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true)
+    @Column(nullable = false)
     private Role role;
 
-    @JsonIgnore
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status;
 
-    @JsonIgnore
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @JsonIgnore
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
 
-    @JsonIgnore
     @Column(name = "verify_otp")
+    @JsonIgnore
     private String verifyOtp;
 
-    @JsonIgnore
     @Column(name = "verify_otp_expired_at")
-    private long verifyOtpExpiredAt;
-
     @JsonIgnore
+    private Long verifyOtpExpiredAt;
+
     @Column(name = "reset_otp")
+    @JsonIgnore
     private String resetOtp;
 
-    @JsonIgnore
     @Column(name = "reset_otp_expired_at")
-    private long resetOtpExpiredAt;
+    @JsonIgnore
+    private Long resetOtpExpiredAt;
+
+    @Column(name = "created_at", nullable = false)
+    @JsonIgnore
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    @JsonIgnore
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -98,38 +96,30 @@ public class Account implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        if(this.role != null) authorities.add(new SimpleGrantedAuthority(this.role.toString()));
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if (role != null) {
+            authorities.add(() -> role.name());
+        }
         return authorities;
     }
 
     @Override
-    public String getUsername() {
-        return this.username;
-    }
-
-    @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return true; // hoặc dùng flag nếu cần
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return true; // hoặc dùng flag nếu cần
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return true; // hoặc dùng flag nếu cần
     }
 
     @Override
     public boolean isEnabled() {
         return this.status == Status.ACTIVE;
-    }
-
-    @JsonIgnore
-    public User getUser() {
-        return this.user;
     }
 }
