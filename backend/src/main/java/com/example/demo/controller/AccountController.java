@@ -1,4 +1,4 @@
-package com.example.demo.api;
+package com.example.demo.controller;
 
 import com.example.demo.model.io.request.ResetPasswordRequest;
 import com.example.demo.service.intface.IAccountService;
@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin("*")
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
-public class AccountAPI {
+public class AccountController {
     private final IAccountService accountService;
 
     @PostMapping("/send-reset-otp")

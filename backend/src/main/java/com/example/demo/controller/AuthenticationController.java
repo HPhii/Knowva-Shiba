@@ -1,4 +1,4 @@
-package com.example.demo.api;
+package com.example.demo.controller;
 
 import com.example.demo.config.Filter;
 import com.example.demo.model.io.request.RegisterRequest;
@@ -23,7 +23,7 @@ import java.util.Map;
 @CrossOrigin("*")
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
-public class AuthenticationAPI {
+public class AuthenticationController {
     private final IAccountService accountService;
     private final IAuthenticationService authenticationService;
     private final Filter filter;

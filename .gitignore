@@ -1,0 +1,25 @@
+# === Backend: Spring Boot ===
+/backend/target/
+/backend/.mvn/
+/backend/.idea/
+/backend/*.iml
+
+# === Frontend: ReactJS ===
+/frontend/node_modules/
+/frontend/build/
+/frontend/.env
+/frontend/.vitepress/
+/frontend/dist/
+
+# === Flask Service ===
+/flask-service/venv/
+/flask-service/__pycache__/
+/flask-service/*.pyc
+/flask-service/.env
+
+# === Global ===
+.DS_Store
+*.log
+*.swp
+.env
+*.db

@@ -43,8 +43,6 @@ public class QuizSet {
     @Enumerated(EnumType.STRING)
     private Visibility visibility;
 
-    private Boolean shuffleQuestions;
-
     private Integer timeLimit;
 
     private LocalDateTime createdAt;
