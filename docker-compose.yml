@@ -32,10 +32,23 @@ services:
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLIENT_URL: ${CLIENT_URL}
+      FLASK_SERVICE_HOST: ${FLASK_SERVICE_HOST}
     depends_on:
       - mysql_container
     ports:
       - "8080:8080"
+    networks:
+      - backend
+
+  flask_app:
+    image: my-flask-app  # image bạn đã build bằng Dockerfile
+    container_name: flask_container
+    environment:
+      LLAMDA_API_KEY: ${LLAMDA_API_KEY}
+    depends_on:
+      - mysql_container
+    ports:
+      - "5000:5000"  # chỉnh nếu Flask dùng port khác
     networks:
       - backend
 

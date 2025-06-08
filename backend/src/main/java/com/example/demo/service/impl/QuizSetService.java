@@ -19,6 +19,7 @@ import com.example.demo.service.intface.IQuizSetService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -43,6 +44,8 @@ public class QuizSetService implements IQuizSetService {
     private final IAccountService accountService;
     private final QuizSetManualMapper quizSetMapper;
 
+    @Value("${flask.service.url}")
+    private String flaskHost;
     @Override
     public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file) {
         User owner = accountService.getCurrentAccount().getUser();
@@ -144,7 +147,7 @@ public class QuizSetService implements IQuizSetService {
                 }
             });
 
-            String url = "http://localhost:5000/generate-quiz?language=" + language +
+            String url = "http://"+ flaskHost + ":5000/generate-quiz?language=" + language +
                     "&sourceType=" + sourceType.name() +
                     "&questionType=" + questionType.name() +
                     "&maxQuestions=" + (maxQuestions != null ? maxQuestions.toString() : "5");
