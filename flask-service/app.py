@@ -1,9 +1,19 @@
+import os
+import platform
 from flask import Flask, request, jsonify
 import pytesseract
 from utils.text_extraction import extract_text
 from utils.quiz_generation import generate_quiz
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Cấu hình đường dẫn Tesseract linh hoạt
+if platform.system() == "Windows":
+    # Đường dẫn mặc định trên Windows, có thể ghi đè bằng biến môi trường
+    tesseract_cmd = os.getenv("TESSERACT_CMD", r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+else:
+    # Trên Linux (Docker), Tesseract thường có sẵn trong PATH
+    pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "tesseract")
 
 app = Flask(__name__)
 
@@ -33,4 +43,4 @@ def generate_quiz_endpoint():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(host="0.0.0.0", port=5000)
