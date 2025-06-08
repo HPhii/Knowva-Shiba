@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.Account;
 import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.response.object.EmailDetails;
@@ -21,6 +22,7 @@ public class AccountService implements IAccountService {
     private final AccountRepository accountRepository;
     private final IEmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final AccountMapper accountMapper;
 
     @Override
     public List<Account> getAllAccount() {
@@ -38,13 +40,7 @@ public class AccountService implements IAccountService {
         Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Account account = accountRepository.findAccountById(currentAccount.getId());
 
-        AccountResponse accountResponse = new AccountResponse();
-        accountResponse.setAccountId(account.getId());
-        accountResponse.setEmail(account.getEmail());
-        accountResponse.setIsVerified(account.getIsVerified());
-        accountResponse.setUserId(account.getUser().getId());
-
-        return accountResponse;
+        return accountMapper.toAccountResponse(account);
     }
 
     @Override

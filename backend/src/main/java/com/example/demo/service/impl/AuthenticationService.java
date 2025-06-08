@@ -2,7 +2,7 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.DuplicateEntity;
 import com.example.demo.exception.EntityNotFoundException;
-import com.example.demo.exception.PasswordMismatchEntity;
+import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.LoginProvider;
@@ -23,7 +23,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -39,13 +38,13 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
-    private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
     private final ITokenService tokenService;
     private final AuthenticationManager authenticationManager;
+    private final AccountMapper accountMapper;
 
 
     private static final String WELCOME_SUBJECT = "ABC";
@@ -79,17 +78,17 @@ public class AuthenticationService implements IAuthenticationService {
 
         Account newAccount = accountRepository.save(account);
 
-        AccountResponse accountResponse = AccountResponse.builder()
-                .accountId(newAccount.getId())
-                .email(newAccount.getEmail())
-                .username(newAccount.getUsername())
-                .userId(newUser.getId())
-                .isVerified(newAccount.getIsVerified())
-                .build();
-
 //        sendMail(newAccount);
+//        AccountResponse accountResponse = AccountResponse.builder()
+//                .accountId(newAccount.getId())
+//                .email(newAccount.getEmail())
+//                .username(newAccount.getUsername())
+//                .userId(newUser.getId())
+//                .isVerified(newAccount.getIsVerified())
+//                .build();
 
-        return accountResponse;
+
+        return accountMapper.toAccountResponse(newAccount);
     }
 
 
@@ -116,15 +115,9 @@ public class AuthenticationService implements IAuthenticationService {
             // => tài khoản có tồn tại
             Account account = (Account) authentication.getPrincipal();
 
-            return AccountResponse.builder()
-                    .accountId(account.getId())
-                    .username(account.getUsername())
-                    .email(account.getEmail())
-                    .role(account.getRole())
-                    .isVerified(account.getIsVerified())
-                    .userId(account.getUser() != null ? account.getUser().getId() : null)
-                    .token(tokenService.generateToken(account))
-                    .build();
+            AccountResponse accountResponse = accountMapper.toAccountResponse(account);
+            accountResponse.setToken(tokenService.generateToken(account));
+            return accountResponse;
         } catch (Exception e) {
             throw new EntityNotFoundException("Incorrect Email or Password");
         }
@@ -184,7 +177,7 @@ public class AuthenticationService implements IAuthenticationService {
             accountRepository.save(account);
         }
 
-        AccountResponse accountResponse = modelMapper.map(account, AccountResponse.class);
+        AccountResponse accountResponse = accountMapper.toAccountResponse(account);
         accountResponse.setToken(tokenService.generateToken(account));
         return accountResponse;
     }

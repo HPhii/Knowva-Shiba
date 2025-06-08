@@ -1,4 +1,4 @@
-package com.example.demo.api;
+package com.example.demo.controller;
 
 import com.example.demo.service.intface.ICloudinaryService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -15,7 +15,7 @@ import java.util.Map;
 @CrossOrigin("*")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
-public class CloudinaryAPI {
+public class CloudinaryController {
     private final ICloudinaryService cloudinaryService;
 
     @PostMapping("/cloudinary/upload")

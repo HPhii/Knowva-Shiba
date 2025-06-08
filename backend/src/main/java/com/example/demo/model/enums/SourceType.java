@@ -1,7 +1,7 @@
 package com.example.demo.model.enums;
 
 public enum SourceType {
-    FILE,
+    PDF,
     IMAGE,
     TEXT
 }

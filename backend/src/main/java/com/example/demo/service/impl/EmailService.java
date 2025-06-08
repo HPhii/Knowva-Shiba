@@ -1,6 +1,5 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.model.entity.Account;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.service.intface.IEmailService;
 import jakarta.mail.MessagingException;
