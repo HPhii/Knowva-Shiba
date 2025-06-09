@@ -12,11 +12,14 @@ const ForgotPasswordPage = () => {
 	const { isLoading, forgotPassword } = useAuthStore();
 
 	const handleSubmit = async (e) => {
-		e.preventDefault();
+	e.preventDefault();
+	try {
 		await forgotPassword(email);
-		setIsSubmitted(true);
-	};
-
+		navigate("/reset-password", { state: { email } });
+	} catch (error) {
+		console.error("Failed to send reset OTP:", error);
+	}
+};
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}

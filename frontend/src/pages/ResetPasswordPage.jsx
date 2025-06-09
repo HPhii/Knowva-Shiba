@@ -1,28 +1,43 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
-import { Lock } from "lucide-react";
+import { Lock, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 
 const ResetPasswordPage = () => {
+	const [otp, setOtp] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+
 	const { resetPassword, error, isLoading, message } = useAuthStore();
 
-	const { token } = useParams();
+	const location = useLocation();
 	const navigate = useNavigate();
+
+	const email = location.state?.email;
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
-		if (password !== confirmPassword) {
-			alert("Passwords do not match");
+		if (!email) {
+			toast.error("Missing email. Please start from Forgot Password page.");
 			return;
 		}
+
+		if (!otp.trim()) {
+			toast.error("Please enter the OTP sent to your email.");
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			toast.error("Passwords do not match.");
+			return;
+		}
+
 		try {
-			await resetPassword(token, password);
+			await resetPassword({ email, otp, newPassword: password });
 
 			toast.success("Password reset successfully, redirecting to login page...");
 			setTimeout(() => {
@@ -49,6 +64,15 @@ const ResetPasswordPage = () => {
 				{message && <p className='text-green-500 text-sm mb-4'>{message}</p>}
 
 				<form onSubmit={handleSubmit}>
+					<Input
+						icon={KeyRound}
+						type='text'
+						placeholder='Enter OTP'
+						value={otp}
+						onChange={(e) => setOtp(e.target.value)}
+						required
+					/>
+
 					<Input
 						icon={Lock}
 						type='password'
@@ -81,4 +105,5 @@ const ResetPasswordPage = () => {
 		</motion.div>
 	);
 };
+
 export default ResetPasswordPage;

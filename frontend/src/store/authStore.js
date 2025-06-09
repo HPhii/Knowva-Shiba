@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import axios from "axios";
+import api from "../config/axios";
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api/auth" : "/api/auth";
+const API_URL = import.meta.env.MODE === "development" ? "http://localhost:8080/api" : "/api";
 
 axios.defaults.withCredentials = true;
 
@@ -23,21 +24,21 @@ export const useAuthStore = create((set) => ({
 			throw error;
 		}
 	},
-	login: async (email, password) => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axios.post(`${API_URL}/login`, { email, password });
-			set({
-				isAuthenticated: true,
-				user: response.data.user,
-				error: null,
-				isLoading: false,
-			});
-		} catch (error) {
-			set({ error: error.response?.data?.message || "Error logging in", isLoading: false });
-			throw error;
-		}
-	},
+	// login: async (email, password) => {
+	// 	set({ isLoading: true, error: null });
+	// 	try {
+	// 		const response = await axios.post(`${API_URL}/login`, { email, password });
+	// 		set({
+	// 			isAuthenticated: true,
+	// 			user: response.data.user,
+	// 			error: null,
+	// 			isLoading: false,
+	// 		});
+	// 	} catch (error) {
+	// 		set({ error: error.response?.data?.message || "Error logging in", isLoading: false });
+	// 		throw error;
+	// 	}
+	// },
 
 	logout: async () => {
 		set({ isLoading: true, error: null });
@@ -49,17 +50,18 @@ export const useAuthStore = create((set) => ({
 			throw error;
 		}
 	},
-	verifyEmail: async (code) => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axios.post(`${API_URL}/verify-email`, { code });
-			set({ user: response.data.user, isAuthenticated: true, isLoading: false });
-			return response.data;
-		} catch (error) {
-			set({ error: error.response.data.message || "Error verifying email", isLoading: false });
-			throw error;
-		}
-	},
+	verifyEmail: async ({ code, email }) => {
+	set({ isLoading: true, error: null });
+
+	try {
+		const response = await api.post(`${API_URL}/verify-email?email=${encodeURIComponent(email)}&otp=${code}`);		
+		set({ user: response.data.user, isAuthenticated: true, isLoading: false });
+		return response.data;
+	} catch (error) {
+		set({ error: error.response?.data?.message || "Error verifying email", isLoading: false });
+		throw error;
+	}
+},
 	checkAuth: async () => {
 		set({ isCheckingAuth: true, error: null });
 		try {
@@ -70,18 +72,18 @@ export const useAuthStore = create((set) => ({
 		}
 	},
 	forgotPassword: async (email) => {
-		set({ isLoading: true, error: null });
-		try {
-			const response = await axios.post(`${API_URL}/forgot-password`, { email });
-			set({ message: response.data.message, isLoading: false });
-		} catch (error) {
-			set({
-				isLoading: false,
-				error: error.response.data.message || "Error sending reset password email",
-			});
-			throw error;
-		}
-	},
+	set({ isLoading: true, error: null });
+	try {
+		const response = await api.post(`${API_URL}/send-reset-otp?email=${encodeURIComponent(email)}`);
+		set({ message: response.data.message, isLoading: false });
+	} catch (error) {
+		set({
+			isLoading: false,
+			error: error.response?.data?.message || "Error sending reset OTP",
+		});
+		throw error; // để handle trong component
+	}
+},
 	resetPassword: async (token, password) => {
 		set({ isLoading: true, error: null });
 		try {
