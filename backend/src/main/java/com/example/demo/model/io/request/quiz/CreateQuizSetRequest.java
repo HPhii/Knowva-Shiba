@@ -1,4 +1,4 @@
-package com.example.demo.model.io.request;
+package com.example.demo.model.io.request.quiz;
 
 import com.example.demo.model.enums.QuestionType;
 import com.example.demo.model.enums.SourceType;

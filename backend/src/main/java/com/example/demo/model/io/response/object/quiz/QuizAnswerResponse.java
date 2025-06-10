@@ -1,10 +1,8 @@
-package com.example.demo.model.io.response.object;
+package com.example.demo.model.io.response.object.quiz;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -13,6 +11,4 @@ public class QuizAnswerResponse {
     private Long id;
     private String answerText;
     private Boolean isCorrect;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -1,10 +1,12 @@
 package com.example.demo.model.entity.quiz;
 
 import com.example.demo.model.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "quiz_attempts")
@@ -33,6 +35,8 @@ public class QuizAttempt {
 
     private LocalDateTime completedAt;
 
-//    @Column(columnDefinition = "json")
-//    private JsonNode reviewJson;
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<UserAnswer> userAnswers;
+
 }

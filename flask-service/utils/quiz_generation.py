@@ -67,6 +67,50 @@ Guidelines:
 6. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
 7. If the input content is insufficient to generate {max_questions} questions, generate as many as possible.
 """
+    elif question_type == "MIXED":
+        SYSTEM_PROMPT = f"""
+You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate a mix of multiple-choice and true/false quiz questions based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). The output must be structured as a JSON object matching the following format, where each question can be either multiple-choice (4 answer options) or true/false (2 answer options):
+
+{{
+    "questions": [
+        // Example of a Multiple Choice Question
+        {{
+            "questionText": "Question text for MC in {language}",
+            "questionHtml": null,
+            "imageUrl": null,
+            "timeLimit": 30,
+            "answers": [
+                {{"answerText": "MC Answer 1 in {language}", "isCorrect": true}},
+                {{"answerText": "MC Answer 2 in {language}", "isCorrect": false}},
+                {{"answerText": "MC Answer 3 in {language}", "isCorrect": false}},
+                {{"answerText": "MC Answer 4 in {language}", "isCorrect": false}}
+            ]
+        }},
+        // Example of a True/False Question
+        {{
+            "questionText": "Question text for T/F in {language}",
+            "questionHtml": null,
+            "imageUrl": null,
+            "timeLimit": 30,
+            "answers": [
+                {{"answerText": "True", "isCorrect": true/false}},
+                {{"answerText": "False", "isCorrect": false/true}}
+            ]
+        }}
+        // ... more questions of either type
+    ]
+}}
+
+Guidelines:
+1. Generate exactly {max_questions} questions in total.
+2. The questions should be a mix of multiple-choice and true/false types. Aim for a balanced distribution if possible.
+3. Ensure questions are factually accurate and relevant to the input content.
+4. Use academic language appropriate for the target language ({language}).
+5. Multiple-choice questions should have one correct answer and three plausible distractors. True/false questions should have "True" and "False" as options, with one being correct.
+6. Set a default time limit of 30 seconds per question.
+7. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
+8. If the input content is insufficient to generate {max_questions} questions, generate as many as possible, maintaining a mix if feasible.
+"""
     else:
         raise ValueError(f"Unsupported question type: {question_type}")
 

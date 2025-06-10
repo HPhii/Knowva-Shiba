@@ -3,7 +3,7 @@ package com.example.demo.mapper;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
-import com.example.demo.model.io.response.object.*;
+import com.example.demo.model.io.response.object.quiz.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -31,8 +31,6 @@ public class QuizSetManualMapper {
                 quizSet.getMaxQuestions(),
                 quizSet.getVisibility(),
                 quizSet.getTimeLimit(),
-                quizSet.getCreatedAt(),
-                quizSet.getUpdatedAt(),
                 questionResponses
         );
     }
@@ -53,8 +51,6 @@ public class QuizSetManualMapper {
                 question.getImageUrl(),
                 question.getTimeLimit(),
                 question.getOrder(),
-                question.getCreatedAt(),
-                question.getUpdatedAt(),
                 answerResponses
         );
     }
@@ -65,9 +61,7 @@ public class QuizSetManualMapper {
         return new QuizAnswerResponse(
                 answer.getId(),
                 answer.getAnswerText(),
-                answer.getIsCorrect(),
-                answer.getCreatedAt(),
-                answer.getUpdatedAt()
+                answer.getIsCorrect()
         );
     }
 
@@ -121,6 +115,14 @@ public class QuizSetManualMapper {
                 question.getOrder(),
                 answers
         );
+    }
+
+    //map To QuizSetResponse List from List<QuizSet>
+    public List<QuizSetResponse> mapToQuizSetResponseList(List<QuizSet> quizSets) {
+        if (quizSets == null) return new ArrayList<>();
+        return quizSets.stream()
+                .map(this::mapToQuizSetResponse)
+                .collect(Collectors.toList());
     }
 
 }
