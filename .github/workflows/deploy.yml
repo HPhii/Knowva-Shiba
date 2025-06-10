@@ -30,6 +30,6 @@ jobs:
 
       - name: Build and push Flask image
         run: |
-          cd ../flask-service
+          cd flask-service
           docker build -t hieuphiacr.azurecr.io/flask:v1 .
           docker push hieuphiacr.azurecr.io/flask:v1
