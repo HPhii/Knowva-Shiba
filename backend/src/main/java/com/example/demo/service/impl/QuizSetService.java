@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.quiz.QuizAnswer;
@@ -7,12 +8,9 @@ import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.QuestionType;
-import com.example.demo.model.io.request.CreateQuizSetRequest;
-import com.example.demo.model.io.request.SaveQuizAnswerRequest;
-import com.example.demo.model.io.request.SaveQuizQuestionRequest;
-import com.example.demo.model.io.request.SaveQuizSetRequest;
-import com.example.demo.model.io.response.object.QuizSetResponse;
-import com.example.demo.model.io.response.object.SimplifiedQuizSetResponse;
+import com.example.demo.model.io.request.quiz.*;
+import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
+import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
@@ -46,6 +44,35 @@ public class QuizSetService implements IQuizSetService {
 
     @Value("${flask.service.url}")
     private String flaskHost;
+
+    @Override
+    public QuizSetResponse deleteQuizSetById(Long id) {
+        QuizSet quizSet = quizSetRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
+        quizSetRepository.delete(quizSet);
+        return quizSetMapper.mapToQuizSetResponse(quizSet);
+    }
+
+    @Override
+    public QuizSetResponse getQuizSetById(Long id) {
+        QuizSet quizSet = quizSetRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
+        return quizSetMapper.mapToQuizSetResponse(quizSet);
+    }
+
+    @Override
+    public List<QuizSetResponse> getQuizSetsOfUser() {
+        User user = accountService.getCurrentAccount().getUser();
+        List<QuizSet> quizSets = quizSetRepository.findAllByOwner_Id(user.getId());
+        return quizSetMapper.mapToQuizSetResponseList(quizSets);
+    }
+
+    @Override
+    public List<QuizSetResponse> getAllQuizSets() {
+        List<QuizSet> quizSets = quizSetRepository.findAll();
+        return quizSetMapper.mapToQuizSetResponseList(quizSets);
+    }
+
     @Override
     public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file) {
         User owner = accountService.getCurrentAccount().getUser();
@@ -197,5 +224,81 @@ public class QuizSetService implements IQuizSetService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse AI response", e);
         }
+    }
+
+    @Override
+    public QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request) {
+        User user = accountService.getCurrentAccount().getUser();
+        QuizSet quizSet = quizSetRepository.findById(quizSetId)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
+
+        // Kiểm tra quyền sở hữu
+        if (!quizSet.getOwner().getId().equals(user.getId())) {
+            throw new SecurityException("You are not authorized to update this QuizSet");
+        }
+
+        // Cập nhật thông tin QuizSet
+        quizSet.setTitle(request.getTitle());
+        quizSet.setLanguage(request.getLanguage());
+        quizSet.setQuestionType(request.getQuestionType());
+        quizSet.setMaxQuestions(request.getMaxQuestions());
+        quizSet.setVisibility(request.getVisibility());
+        quizSet.setTimeLimit(request.getTimeLimit());
+        quizSet.setUpdatedAt(LocalDateTime.now());
+
+        // Cập nhật hoặc tạo mới câu hỏi
+        List<QuizQuestion> updatedQuestions = new ArrayList<>();
+        for (UpdateQuizQuestionRequest qReq : request.getQuestions()) {
+            QuizQuestion question;
+            if (qReq.getId() != null) {
+                // Cập nhật câu hỏi hiện có
+                question = quizSet.getQuestions().stream()
+                        .filter(q -> q.getId().equals(qReq.getId()))
+                        .findFirst()
+                        .orElseThrow(() -> new EntityNotFoundException("Question not found"));
+            } else {
+                // Tạo câu hỏi mới
+                question = new QuizQuestion();
+                question.setQuizSet(quizSet);
+                question.setCreatedAt(LocalDateTime.now());
+            }
+
+            question.setQuestionText(qReq.getQuestionText());
+            question.setQuestionHtml(qReq.getQuestionHtml());
+            question.setImageUrl(qReq.getImageUrl());
+            question.setTimeLimit(qReq.getTimeLimit());
+            question.setOrder(qReq.getOrder());
+            question.setUpdatedAt(LocalDateTime.now());
+
+            // Cập nhật hoặc tạo mới câu trả lời
+            List<QuizAnswer> updatedAnswers = new ArrayList<>();
+            for (UpdateQuizAnswerRequest aReq : qReq.getAnswers()) {
+                QuizAnswer answer;
+                if (aReq.getId() != null) {
+                    // Cập nhật câu trả lời hiện có
+                    answer = question.getAnswers().stream()
+                            .filter(a -> a.getId().equals(aReq.getId()))
+                            .findFirst()
+                            .orElseThrow(() -> new EntityNotFoundException("Answer not found"));
+                } else {
+                    // Tạo câu trả lời mới
+                    answer = new QuizAnswer();
+                    answer.setQuestion(question);
+                    answer.setCreatedAt(LocalDateTime.now());
+                }
+
+                answer.setAnswerText(aReq.getAnswerText());
+                answer.setIsCorrect(aReq.getIsCorrect());
+                answer.setUpdatedAt(LocalDateTime.now());
+                updatedAnswers.add(answer);
+            }
+            question.setAnswers(updatedAnswers);
+            updatedQuestions.add(question);
+        }
+        quizSet.setQuestions(updatedQuestions);
+
+        quizSet = quizSetRepository.save(quizSet);
+
+        return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 }

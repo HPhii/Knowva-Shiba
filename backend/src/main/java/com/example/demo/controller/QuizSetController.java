@@ -1,15 +1,18 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.io.request.CreateQuizSetRequest;
-import com.example.demo.model.io.request.SaveQuizSetRequest;
-import com.example.demo.model.io.response.object.QuizSetResponse;
-import com.example.demo.model.io.response.object.SimplifiedQuizSetResponse;
+import com.example.demo.model.io.request.quiz.CreateQuizSetRequest;
+import com.example.demo.model.io.request.quiz.SaveQuizSetRequest;
+import com.example.demo.model.io.request.quiz.UpdateQuizSetRequest;
+import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
+import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.service.intface.IQuizSetService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/quiz-sets")
@@ -31,6 +34,38 @@ public class QuizSetController {
     @PostMapping("/save")
     public ResponseEntity<QuizSetResponse> saveQuizSet(@RequestBody SaveQuizSetRequest request) {
         QuizSetResponse response = quizSetService.saveQuizSet(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<QuizSetResponse>> getQuizSetsOfUser() {
+        List<QuizSetResponse> responses = quizSetService.getQuizSetsOfUser();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<QuizSetResponse>> getAllQuizSets() {
+        List<QuizSetResponse> responses = quizSetService.getAllQuizSets();
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<QuizSetResponse> getQuizSetById(@PathVariable Long id) {
+        QuizSetResponse response = quizSetService.getQuizSetById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<QuizSetResponse> deleteQuizSetById(@PathVariable Long id) {
+        QuizSetResponse response = quizSetService.deleteQuizSetById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{quizSetId}")
+    public ResponseEntity<QuizSetResponse> updateQuizSet(
+            @PathVariable Long quizSetId,
+            @RequestBody UpdateQuizSetRequest request) {
+        QuizSetResponse response = quizSetService.updateQuizSet(quizSetId, request);
         return ResponseEntity.ok(response);
     }
 }

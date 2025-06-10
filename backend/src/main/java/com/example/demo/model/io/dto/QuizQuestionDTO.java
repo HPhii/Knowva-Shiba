@@ -1,4 +1,4 @@
-package com.example.demo.model.io.request;
+package com.example.demo.model.io.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,11 +9,12 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaveQuizQuestionRequest {
+public class QuizQuestionDTO {
+    private Long id;
     private String questionText;
     private String questionHtml;
     private String imageUrl;
     private Integer timeLimit;
     private Integer order;
-    private List<SaveQuizAnswerRequest> answers;
+    private List<QuizAnswerDTO> answers;
 }
