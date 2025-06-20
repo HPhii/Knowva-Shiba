@@ -74,10 +74,10 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file) {
+    public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file, String text) {
         User owner = accountService.getCurrentAccount().getUser();
         // Gọi Flask AI service
-        String aiResponse = callFlaskAIService(file, request.getLanguage(), request.getSourceType(),
+        String aiResponse = callFlaskAIService(file, text, request.getLanguage(), request.getSourceType(),
                 request.getQuestionType(), request.getMaxQuestions());
 
         // Phân tích phản hồi từ AI
@@ -112,7 +112,6 @@ public class QuizSetService implements IQuizSetService {
     public QuizSetResponse saveQuizSet(SaveQuizSetRequest request) {
         User owner = accountService.getCurrentAccount().getUser();
 
-        // Tạo QuizSet từ request
         QuizSet quizSet = QuizSet.builder()
                 .owner(owner)
                 .title(request.getTitle())
@@ -127,7 +126,6 @@ public class QuizSetService implements IQuizSetService {
                 .questions(new ArrayList<>())
                 .build();
 
-        // Tạo QuizQuestion và QuizAnswer từ request
         for (SaveQuizQuestionRequest qReq : request.getQuestions()) {
             QuizQuestion question = QuizQuestion.builder()
                     .quizSet(quizSet)
@@ -160,24 +158,31 @@ public class QuizSetService implements IQuizSetService {
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
-    private String callFlaskAIService(MultipartFile file, String language, SourceType sourceType,
-                                      QuestionType questionType, Integer maxQuestions) {
+    private String callFlaskAIService(MultipartFile file, String textInput, String language,
+                                      SourceType sourceType, QuestionType questionType, Integer maxQuestions) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new ByteArrayResource(file.getBytes()) {
-                @Override
-                public String getFilename() {
-                    return file.getOriginalFilename();
-                }
-            });
 
-            String url = "http://"+ flaskHost + ":5000/generate-quiz?language=" + language +
+            if (textInput != null && !textInput.isBlank()) {
+                body.add("text", textInput);
+            } else if (file != null && !file.isEmpty()) {
+                body.add("file", new ByteArrayResource(file.getBytes()) {
+                    @Override
+                    public String getFilename() {
+                        return file.getOriginalFilename();
+                    }
+                });
+            } else {
+                throw new IllegalArgumentException("Either file or text must be provided.");
+            }
+
+            String url = "http://" + flaskHost + "/generate-quiz?language=" + language +
                     "&sourceType=" + sourceType.name() +
                     "&questionType=" + questionType.name() +
-                    "&maxQuestions=" + (maxQuestions != null ? maxQuestions.toString() : "5");
+                    "&maxQuestions=" + (maxQuestions != null ? maxQuestions : 5);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             return restTemplate.postForObject(url, requestEntity, String.class);
@@ -185,6 +190,7 @@ public class QuizSetService implements IQuizSetService {
             throw new RuntimeException("Failed to call AI service", e);
         }
     }
+
 
     private List<QuizQuestion> parseAIResponse(String aiResponse, Integer maxQuestions) {
         try {

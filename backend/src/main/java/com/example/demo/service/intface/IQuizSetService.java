@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface IQuizSetService {
-    SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file);
+    SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file, String text);
     QuizSetResponse saveQuizSet(SaveQuizSetRequest request);
     QuizSetResponse getQuizSetById(Long id);
     List<QuizSetResponse> getQuizSetsOfUser();

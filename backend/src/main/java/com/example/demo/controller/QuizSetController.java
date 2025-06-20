@@ -26,10 +26,12 @@ public class QuizSetController {
     @PostMapping(value = "/generate", consumes = {"multipart/form-data"})
     public ResponseEntity<SimplifiedQuizSetResponse> generateQuizSet(
             @RequestPart("quizSet") CreateQuizSetRequest quizSetRequest,
-            @RequestPart("file") MultipartFile file) {
-        SimplifiedQuizSetResponse response = quizSetService.generateQuizSet(quizSetRequest, file);
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "text", required = false) String inputText) {
+        SimplifiedQuizSetResponse response = quizSetService.generateQuizSet(quizSetRequest, file, inputText);
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/save")
     public ResponseEntity<QuizSetResponse> saveQuizSet(@RequestBody SaveQuizSetRequest request) {

@@ -41,14 +41,14 @@ services:
       - backend
 
   flask_app:
-    image: my-flask-app  # image bạn đã build bằng Dockerfile
+    image: hieuphi/flaskapp:v1
     container_name: flask_container
     environment:
       LLAMDA_API_KEY: ${LLAMDA_API_KEY}
     depends_on:
       - mysql_container
     ports:
-      - "5000:5000"  # chỉnh nếu Flask dùng port khác
+      - "5000:5000"
     networks:
       - backend
 

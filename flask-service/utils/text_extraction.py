@@ -11,7 +11,7 @@ def extract_text(file, source_type):
         return pytesseract.image_to_string(image)
 
     elif source_type == "PDF":
-        file.seek(0)  # Đảm bảo con trỏ về đầu file
+        file.seek(0)
         try:
             pdf_reader = PyPDF2.PdfReader(file)
             text = ""
