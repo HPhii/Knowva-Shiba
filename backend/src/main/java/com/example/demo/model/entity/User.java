@@ -63,10 +63,6 @@ public class User {
     @JsonIgnore
     private List<FlashcardProgress> flashcardProgressList;
 
-    @OneToMany(mappedBy = "user")
-    @JsonIgnore
-    private List<FlashcardAttempt> flashcardAttempts;
-
     @OneToMany(mappedBy = "invitedUser")
     @JsonIgnore
     private List<QuizAccessControl> quizInvitations;

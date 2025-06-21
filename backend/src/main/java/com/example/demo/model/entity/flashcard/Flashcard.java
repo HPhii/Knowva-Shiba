@@ -37,9 +37,4 @@ public class Flashcard {
     @OneToMany(mappedBy = "flashcard", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<FlashcardProgress> progressList;
-
-    @OneToMany(mappedBy = "flashcard", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<FlashcardAttempt> attempts;
-
 }
