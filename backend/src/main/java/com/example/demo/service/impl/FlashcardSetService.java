@@ -7,15 +7,12 @@ import com.example.demo.model.entity.flashcard.*;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.CardType;
 import com.example.demo.model.io.request.flashcard.*;
-import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
-import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardResponse;
-import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
+import com.example.demo.model.io.response.object.flashcard.*;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizAnswerResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizQuestionResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.repository.FlashcardProgressRepository;
-import com.example.demo.repository.FlashcardAttemptRepository;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,7 +42,7 @@ import java.util.stream.Collectors;
 public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardSetRepository flashcardSetRepository;
     private final FlashcardProgressRepository flashcardProgressRepository;
-    private final FlashcardAttemptRepository flashcardAttemptRepository;
+    private final FlaskAIService flaskAIService;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final IAccountService accountService;
@@ -67,9 +64,9 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     @Override
-    public SimplifiedFlashcardSetResponse generateFlashcardSet(CreateFlashcardSetRequest request, MultipartFile file, String text) {
+    public SimplifiedFlashcardSetResponse generateFlashcardSet(CreateFlashcardSetRequest request, List<MultipartFile> files, String text) {
         User owner = accountService.getCurrentAccount().getUser();
-        String aiResponse = callFlaskAIService(file, text, request.getLanguage(), request.getSourceType(),
+        String aiResponse = callFlaskAIService(files, text, request.getLanguage(), request.getSourceType(),
                 request.getCardType(), request.getMaxFlashcards());
         List<Flashcard> flashcards = parseAIResponse(aiResponse, request.getMaxFlashcards());
         FlashcardSet tempFlashcardSet = FlashcardSet.builder()
@@ -167,31 +164,29 @@ public class FlashcardSetService implements IFlashcardSetService {
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
     }
 
-    // Exam Mode: Chấm điểm tự luận bằng AI (implementing)
     @Override
-    public FlashcardAttempt examModeSubmit(Long flashcardSetId, Long flashcardId, String userAnswer) {
-//        User user = accountService.getCurrentAccount().getUser();
-//        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
-//                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
-//        Flashcard flashcard = flashcardSet.getFlashcards().stream()
-//                .filter(f -> f.getId().equals(flashcardId))
-//                .findFirst()
-//                .orElseThrow(() -> new EntityNotFoundException("Flashcard not found"));
-//
-//        String aiFeedback = callFlaskAIForExamMode(flashcard.getBack(), userAnswer);
-//        JsonNode feedbackNode = parseAIResponse(aiFeedback, null);
-//        Float score = feedbackNode.get("score").floatValue();
-//
-//        FlashcardAttempt attempt = FlashcardAttempt.builder()
-//                .user(user)
-//                .flashcardSet(flashcardSet)
-//                .flashcard(flashcard)
-//                .userAnswer(userAnswer)
-//                .score(score)
-//                .attemptedAt(LocalDateTime.now())
-//                .build();
-//        return flashcardAttemptRepository.save(attempt);
-        return null;
+    public ExamModeFeedbackResponse submitExamMode(Long flashcardSetId, SubmitExamModeRequest request) {
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+        Flashcard flashcard = flashcardSet.getFlashcards().stream()
+                .filter(f -> f.getId().equals(request.getFlashcardId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Flashcard not found"));
+
+        String correctAnswer = flashcard.getBack();
+        String userAnswer = request.getUserAnswer();
+
+        String aiResponse = flaskAIService.evaluateAnswer(correctAnswer, userAnswer);
+        JsonNode aiFeedbackNode = parseAIResponse(aiResponse);
+
+        Float score = aiFeedbackNode.get("score").floatValue();
+        JsonNode feedback = aiFeedbackNode.get("feedback");
+
+        String whatWasCorrect = feedback.has("whatWasCorrect") ? feedback.get("whatWasCorrect").asText() : null;
+        String whatWasIncorrect = feedback.has("whatWasIncorrect") ? feedback.get("whatWasIncorrect").asText() : null;
+        String whatCouldHaveIncluded = feedback.has("whatCouldHaveIncluded") ? feedback.get("whatCouldHaveIncluded").asText() : null;
+
+        return new ExamModeFeedbackResponse(score, whatWasCorrect, whatWasIncorrect, whatCouldHaveIncluded);
     }
 
     // Space Repetition Mode: Lên lịch học và test (implementing)
@@ -236,6 +231,14 @@ public class FlashcardSetService implements IFlashcardSetService {
         return parseQuizAIResponse(aiResponse);
     }
 
+    private JsonNode parseAIResponse(String aiResponse) {
+        try {
+            return objectMapper.readTree(aiResponse);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse AI response", e);
+        }
+    }
+
     private String callFlaskAIForQuizGeneration(FlashcardSet flashcardSet, String language, String questionType, int maxQuestions) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -260,7 +263,7 @@ public class FlashcardSetService implements IFlashcardSetService {
         return restTemplate.postForObject(url, requestEntity, String.class);
     }
 
-    private String callFlaskAIService(MultipartFile file, String textInput, String language, SourceType sourceType,
+    private String callFlaskAIService(List<MultipartFile> files, String textInput, String language, SourceType sourceType,
                                       CardType cardType, Integer maxFlashcards) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -268,15 +271,17 @@ public class FlashcardSetService implements IFlashcardSetService {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             if (textInput != null && !textInput.isBlank()) {
                 body.add("text", textInput);
-            } else if (file != null && !file.isEmpty()) {
-                body.add("file", new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
-                    @Override
-                    public String getFilename() {
-                        return file.getOriginalFilename();
-                    }
-                });
+            } else if (files != null && !files.isEmpty()) {
+                for (MultipartFile file : files) {
+                    body.add("files", new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return file.getOriginalFilename();
+                        }
+                    });
+                }
             } else {
-                throw new IllegalArgumentException("Either file or text must be provided.");
+                throw new IllegalArgumentException("Either files or text must be provided.");
             }
             String url = "http://" + flaskHost + "/generate-flashcards?language=" + language +
                     "&sourceType=" + sourceType.name() +
@@ -287,16 +292,6 @@ public class FlashcardSetService implements IFlashcardSetService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to call AI service", e);
         }
-    }
-
-    // Gọi Flask AI để chấm điểm Exam Mode
-    private String callFlaskAIForExamMode(String correctAnswer, String userAnswer) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String requestBody = String.format("{\"correctAnswer\": \"%s\", \"userAnswer\": \"%s\"}", correctAnswer, userAnswer);
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-        String url = "http://" + flaskHost + "/exam-mode-grade";
-        return restTemplate.postForObject(url, requestEntity, String.class);
     }
 
     private List<Flashcard> parseAIResponse(String aiResponse, Integer maxFlashcards) {

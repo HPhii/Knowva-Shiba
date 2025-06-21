@@ -26,9 +26,9 @@ public class QuizSetController {
     @PostMapping(value = "/generate", consumes = {"multipart/form-data"})
     public ResponseEntity<SimplifiedQuizSetResponse> generateQuizSet(
             @RequestPart("quizSet") CreateQuizSetRequest quizSetRequest,
-            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestPart(value = "text", required = false) String inputText) {
-        SimplifiedQuizSetResponse response = quizSetService.generateQuizSet(quizSetRequest, file, inputText);
+        SimplifiedQuizSetResponse response = quizSetService.generateQuizSet(quizSetRequest, files, inputText);
         return ResponseEntity.ok(response);
     }
 

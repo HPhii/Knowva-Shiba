@@ -1,7 +1,6 @@
 package com.example.demo.model.entity;
 
 import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
-import com.example.demo.model.entity.flashcard.FlashcardAttempt;
 import com.example.demo.model.entity.flashcard.FlashcardProgress;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.entity.quiz.QuizAccessControl;
