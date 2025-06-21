@@ -74,16 +74,13 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, MultipartFile file, String text) {
+    public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, List<MultipartFile> files, String text) {
         User owner = accountService.getCurrentAccount().getUser();
-        // Gọi Flask AI service
-        String aiResponse = callFlaskAIService(file, text, request.getLanguage(), request.getSourceType(),
+        String aiResponse = callFlaskAIService(files, text, request.getLanguage(), request.getSourceType(),
                 request.getQuestionType(), request.getMaxQuestions());
 
-        // Phân tích phản hồi từ AI
         List<QuizQuestion> questions = parseAIResponse(aiResponse, request.getMaxQuestions());
 
-        // Tạo QuizSet tạm thời (không lưu vào database)
         QuizSet tempQuizSet = QuizSet.builder()
                 .owner(owner)
                 .title(request.getTitle())
@@ -96,7 +93,6 @@ public class QuizSetService implements IQuizSetService {
                 .questions(questions)
                 .build();
 
-        // Thiết lập mối quan hệ cho các câu hỏi và câu trả lời
         for (QuizQuestion question : questions) {
             question.setQuizSet(tempQuizSet);
             for (QuizAnswer answer : question.getAnswers()) {
@@ -104,7 +100,6 @@ public class QuizSetService implements IQuizSetService {
             }
         }
 
-        // Trả về response mà không lưu
         return quizSetMapper.mapToSimplifiedQuizSetResponse(tempQuizSet);
     }
 
@@ -156,80 +151,6 @@ public class QuizSetService implements IQuizSetService {
         quizSet = quizSetRepository.save(quizSet);
 
         return quizSetMapper.mapToQuizSetResponse(quizSet);
-    }
-
-    private String callFlaskAIService(MultipartFile file, String textInput, String language,
-                                      SourceType sourceType, QuestionType questionType, Integer maxQuestions) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-
-            if (textInput != null && !textInput.isBlank()) {
-                body.add("text", textInput);
-            } else if (file != null && !file.isEmpty()) {
-                body.add("file", new ByteArrayResource(file.getBytes()) {
-                    @Override
-                    public String getFilename() {
-                        return file.getOriginalFilename();
-                    }
-                });
-            } else {
-                throw new IllegalArgumentException("Either file or text must be provided.");
-            }
-
-            String url = "http://" + flaskHost + "/generate-quiz?language=" + language +
-                    "&sourceType=" + sourceType.name() +
-                    "&questionType=" + questionType.name() +
-                    "&maxQuestions=" + (maxQuestions != null ? maxQuestions : 5);
-
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            return restTemplate.postForObject(url, requestEntity, String.class);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to call AI service", e);
-        }
-    }
-
-
-    private List<QuizQuestion> parseAIResponse(String aiResponse, Integer maxQuestions) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(aiResponse);
-            List<QuizQuestion> questions = new ArrayList<>();
-            JsonNode questionsNode = rootNode.get("questions");
-
-            // Giới hạn số câu hỏi theo maxQuestions nếu có
-            int limit = maxQuestions != null ? Math.min(maxQuestions, questionsNode.size()) : questionsNode.size();
-            for (int i = 0; i < limit; i++) {
-                JsonNode qNode = questionsNode.get(i);
-                QuizQuestion question = QuizQuestion.builder()
-                        .questionText(qNode.get("questionText").asText())
-                        .questionHtml(qNode.has("questionHtml") ? qNode.get("questionHtml").asText(null) : null)
-                        .imageUrl(qNode.has("imageUrl") ? qNode.get("imageUrl").asText(null) : null)
-                        .timeLimit(qNode.has("timeLimit") ? qNode.get("timeLimit").asInt() : null)
-                        .order(i + 1)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .answers(new ArrayList<>())
-                        .build();
-
-                JsonNode answersNode = qNode.get("answers");
-                for (JsonNode aNode : answersNode) {
-                    QuizAnswer answer = QuizAnswer.builder()
-                            .answerText(aNode.get("answerText").asText())
-                            .isCorrect(aNode.get("isCorrect").asBoolean())
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build();
-                    question.getAnswers().add(answer);
-                }
-
-                questions.add(question);
-            }
-            return questions;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse AI response", e);
-        }
     }
 
     @Override
@@ -306,5 +227,82 @@ public class QuizSetService implements IQuizSetService {
         quizSet = quizSetRepository.save(quizSet);
 
         return quizSetMapper.mapToQuizSetResponse(quizSet);
+    }
+
+
+    private String callFlaskAIService(List<MultipartFile> files, String textInput, String language,
+                                      SourceType sourceType, QuestionType questionType, Integer maxQuestions) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+
+            if (textInput != null && !textInput.isBlank()) {
+                body.add("text", textInput);
+            } else if (files != null && !files.isEmpty()) {
+                for (MultipartFile file : files) {
+                    body.add("files", new ByteArrayResource(file.getBytes()) {
+                        @Override
+                        public String getFilename() {
+                            return file.getOriginalFilename();
+                        }
+                    });
+                }
+            } else {
+                throw new IllegalArgumentException("Either files or text must be provided.");
+            }
+
+            String url = "http://" + flaskHost + "/generate-quiz?language=" + language +
+                    "&sourceType=" + sourceType.name() +
+                    "&questionType=" + questionType.name() +
+                    "&maxQuestions=" + (maxQuestions != null ? maxQuestions : 5);
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            return restTemplate.postForObject(url, requestEntity, String.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to call AI service", e);
+        }
+    }
+
+
+    private List<QuizQuestion> parseAIResponse(String aiResponse, Integer maxQuestions) {
+        try {
+            JsonNode rootNode = objectMapper.readTree(aiResponse);
+            List<QuizQuestion> questions = new ArrayList<>();
+            JsonNode questionsNode = rootNode.get("questions");
+
+            // Giới hạn số câu hỏi theo maxQuestions nếu có
+            int limit = maxQuestions != null ? Math.min(maxQuestions, questionsNode.size()) : questionsNode.size();
+            for (int i = 0; i < limit; i++) {
+                JsonNode qNode = questionsNode.get(i);
+                QuizQuestion question = QuizQuestion.builder()
+                        .questionText(qNode.get("questionText").asText())
+                        .questionHtml(qNode.has("questionHtml") ? qNode.get("questionHtml").asText(null) : null)
+                        .imageUrl(qNode.has("imageUrl") ? qNode.get("imageUrl").asText(null) : null)
+                        .timeLimit(qNode.has("timeLimit") ? qNode.get("timeLimit").asInt() : null)
+                        .order(i + 1)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .answers(new ArrayList<>())
+                        .build();
+
+                JsonNode answersNode = qNode.get("answers");
+                for (JsonNode aNode : answersNode) {
+                    QuizAnswer answer = QuizAnswer.builder()
+                            .answerText(aNode.get("answerText").asText())
+                            .isCorrect(aNode.get("isCorrect").asBoolean())
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    question.getAnswers().add(answer);
+                }
+
+                questions.add(question);
+            }
+            return questions;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse AI response", e);
+        }
     }
 }
