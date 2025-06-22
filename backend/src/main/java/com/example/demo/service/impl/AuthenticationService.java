@@ -23,6 +23,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,11 +34,14 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
+    private static final String WELCOME_SUBJECT = "ABC";
+    private static final String WELCOME_TEMPLATE = "welcome-template";
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
@@ -45,10 +49,7 @@ public class AuthenticationService implements IAuthenticationService {
     private final ITokenService tokenService;
     private final AuthenticationManager authenticationManager;
     private final AccountMapper accountMapper;
-
-
-    private static final String WELCOME_SUBJECT = "ABC";
-    private static final String WELCOME_TEMPLATE = "welcome-template";
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Override
     public AccountResponse register(RegisterRequest request) {
@@ -107,16 +108,16 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     public AccountResponse login(LoginRequest loginRequestDTO) {
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                    loginRequestDTO.getEmail(),
-                    loginRequestDTO.getPassword()
-            ));
-
-            // => tài khoản có tồn tại
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequestDTO.getEmail(),
+                            loginRequestDTO.getPassword()
+                    )
+            );
             Account account = (Account) authentication.getPrincipal();
-
+            String token = generateAndStoreToken(account);
             AccountResponse accountResponse = accountMapper.toAccountResponse(account);
-            accountResponse.setToken(tokenService.generateToken(account));
+            accountResponse.setToken(token);
             return accountResponse;
         } catch (Exception e) {
             throw new EntityNotFoundException("Incorrect Email or Password");
@@ -177,8 +178,21 @@ public class AuthenticationService implements IAuthenticationService {
             accountRepository.save(account);
         }
 
+        String token = generateAndStoreToken(account);
         AccountResponse accountResponse = accountMapper.toAccountResponse(account);
-        accountResponse.setToken(tokenService.generateToken(account));
+        accountResponse.setToken(token);
         return accountResponse;
+    }
+
+    private String generateAndStoreToken(Account account) {
+        String userId = account.getId() + "";
+        String sessionKey = "session:" + userId;
+        String existingToken = (String) redisTemplate.opsForValue().get(sessionKey);
+        if (existingToken != null) {
+            tokenService.invalidateToken(existingToken);
+        }
+        String newToken = tokenService.generateToken(account);
+        redisTemplate.opsForValue().set(sessionKey, newToken, 24, TimeUnit.HOURS);
+        return newToken;
     }
 }
