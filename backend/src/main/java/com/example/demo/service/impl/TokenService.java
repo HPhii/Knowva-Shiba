@@ -13,19 +13,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class TokenService implements ITokenService {
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
-    private final Map<String, LocalDateTime> tokenBlacklist = new ConcurrentHashMap<>();
 
     private final AccountRepository accountRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
@@ -35,9 +36,10 @@ public class TokenService implements ITokenService {
     @Override
     public String generateToken(Account account) {
         String token = Jwts.builder()
-                .subject(account.getId()+"")
+                .subject(account.getId() + "")
+                .claim("role", account.getRole().name())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24h
                 .signWith(getSignKey())
                 .compact();
         return token;
@@ -63,11 +65,27 @@ public class TokenService implements ITokenService {
 
     @Override
     public void invalidateToken(String token) {
-        // Blacklist the token with its expiry time.
-        tokenBlacklist.put(token, LocalDateTime.now().plusHours(1)); // Optional: token lifespan.
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSignKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Date expiration = claims.getExpiration();
+            long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000; // TTL in seconds
+            if (ttl > 0) {
+                String key = "blacklist:" + token;
+                redisTemplate.opsForValue().set(key, "1", ttl, TimeUnit.SECONDS);
+            }
+        } catch (ExpiredJwtException e) {
+            // Token đã hết hạn, do nothing
+        } catch (Exception e) {
+            throw new AuthException("Invalid token format or signature!");
+        }
     }
 
     private boolean isTokenBlacklisted(String token) {
-        return tokenBlacklist.containsKey(token);
+        String key = "blacklist:" + token;
+        return redisTemplate.hasKey(key);
     }
 }

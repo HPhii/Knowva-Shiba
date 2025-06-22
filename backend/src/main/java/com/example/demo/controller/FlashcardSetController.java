@@ -1,10 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.entity.flashcard.Flashcard;
-import com.example.demo.model.entity.flashcard.FlashcardAttempt;
 import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
+import com.example.demo.model.io.request.flashcard.SubmitExamModeRequest;
 import com.example.demo.model.io.request.flashcard.UpdateFlashcardSetRequest;
+import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
@@ -28,9 +29,9 @@ public class FlashcardSetController {
     @PostMapping(value = "/generate", consumes = {"multipart/form-data"})
     public ResponseEntity<SimplifiedFlashcardSetResponse> generateFlashcardSet(
             @RequestPart("flashcardSet") CreateFlashcardSetRequest flashcardSetRequest,
-            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files, // Thay "file" thành "files"
             @RequestPart(value = "text", required = false) String inputText) {
-        SimplifiedFlashcardSetResponse response = flashcardSetService.generateFlashcardSet(flashcardSetRequest, file, inputText);
+        SimplifiedFlashcardSetResponse response = flashcardSetService.generateFlashcardSet(flashcardSetRequest, files, inputText);
         return ResponseEntity.ok(response);
     }
 
@@ -72,13 +73,11 @@ public class FlashcardSetController {
         return ResponseEntity.ok(responses);
     }
 
-    // Exam Mode: Submit user answer
-    @PostMapping("/{flashcardSetId}/exam-mode/{flashcardId}")
-    public ResponseEntity<FlashcardAttempt> submitExamMode(
+    @PostMapping("/{flashcardSetId}/exam-mode/submit")
+    public ResponseEntity<ExamModeFeedbackResponse> submitExamMode(
             @PathVariable Long flashcardSetId,
-            @PathVariable Long flashcardId,
-            @RequestBody String userAnswer) {
-        FlashcardAttempt response = flashcardSetService.examModeSubmit(flashcardSetId, flashcardId, userAnswer);
+            @RequestBody SubmitExamModeRequest request) {
+        ExamModeFeedbackResponse response = flashcardSetService.submitExamMode(flashcardSetId, request);
         return ResponseEntity.ok(response);
     }
 

@@ -13,6 +13,17 @@ services:
     networks:
       - backend
 
+  redis_container:
+    image: redis:7.0
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - backend
+
   app:
     image: hieuphi/exe:v2
     container_name: springboot_container
@@ -33,8 +44,11 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CLIENT_URL: ${CLIENT_URL}
       FLASK_SERVICE_HOST: ${FLASK_SERVICE_HOST}
+      SPRING_DATA_REDIS_HOST: redis_container
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - mysql_container
+      - redis_container
     ports:
       - "8080:8080"
     networks:
@@ -54,6 +68,7 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
 
 networks:
   backend:

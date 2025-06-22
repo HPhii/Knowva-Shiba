@@ -54,9 +54,5 @@ public class FlashcardSet {
 
     @OneToMany(mappedBy = "flashcardSet", cascade = CascadeType.ALL)
     @JsonIgnore
-    private List<FlashcardAttempt> attempts;
-
-    @OneToMany(mappedBy = "flashcardSet", cascade = CascadeType.ALL)
-    @JsonIgnore
     private List<FlashcardAccessControl> accessControls;
 }
