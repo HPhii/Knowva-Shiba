@@ -9,6 +9,10 @@ import com.example.demo.model.io.response.paged.PagedUsersResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IUserService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,9 +23,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService implements IUserService {
     private final UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     @Override
+    @Cacheable(value = "users", key = "#status + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public PagedUsersResponse getAllUsers(Status status, Pageable pageable) {
+        log.info("Fetching all user");
         Page<User> userPage = userRepository.findByAccount_Status(status, pageable);
         List<User> users = userPage.getContent();
 
@@ -33,11 +40,11 @@ public class UserService implements IUserService {
         );
     }
 
-    @Override
+    @Cacheable(value = "userProfile", key = "#id")
     public UserProfileResponse getUserProfile(Long id) {
+        log.info("Fetching user profile for id: {}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getAccount().getEmail())
@@ -49,6 +56,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @CacheEvict(value = "userProfile", key = "#id")
     public User deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -58,6 +66,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @CacheEvict(value = "userProfile", key = "#id")
     public UpdateUserProfileDTO updateUserProfile(Long id, UpdateUserProfileDTO updateUserProfileDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -79,6 +88,5 @@ public class UserService implements IUserService {
                 .username(user.getAccount().getUsername())
                 .email(user.getAccount().getEmail())
                 .build();
-
     }
 }

@@ -8,7 +8,6 @@ import com.example.demo.model.entity.quiz.QuizAttempt;
 import com.example.demo.model.entity.quiz.QuizSet;
 import com.example.demo.model.enums.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,7 +25,6 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
     @Column(name = "full_name")

@@ -39,9 +39,9 @@ public class QuizSetController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<List<QuizSetResponse>> getQuizSetsOfUser() {
-        List<QuizSetResponse> responses = quizSetService.getQuizSetsOfUser();
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<QuizSetResponse>> getQuizSetsOfUser(@PathVariable Long userId) {
+        List<QuizSetResponse> responses = quizSetService.getQuizSetsOfUser(userId);
         return ResponseEntity.ok(responses);
     }
 

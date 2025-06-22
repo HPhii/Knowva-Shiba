@@ -17,6 +17,8 @@ import com.example.demo.utils.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,18 +34,19 @@ public class FlashcardSetService implements IFlashcardSetService{
     private final FlashcardSetRepository flashcardSetRepository;
     private final FlashcardProgressRepository flashcardProgressRepository;
     private final FlaskAIService flaskAIService;
-    private final ObjectMapper objectMapper;
     private final IAccountService accountService;
     private final FlashcardSetManualMapper flashcardSetMapper;
     private final FlashcardSetAIService flashcardSetAIService;
 
     @Override
+    @Cacheable(value = "allFlashcardSets")
     public List<FlashcardSetResponse> getAllFlashcardSets() {
         return flashcardSetMapper.mapToFlashcardSetResponseList(flashcardSetRepository.findAll());
     }
 
     @Override
-    public List<FlashcardSetResponse> getFlashcardSetsOfUser() {
+    @Cacheable(value = "flashcardSetsOfUser", key = "#userId")
+    public List<FlashcardSetResponse> getFlashcardSetsOfUser(Long userId) {
         User user = accountService.getCurrentAccount().getUser();
         List<FlashcardSet> flashcardSets = flashcardSetRepository.findAllByOwner_Id(user.getId());
         return flashcardSetMapper.mapToFlashcardSetResponseList(flashcardSets);
@@ -80,6 +83,7 @@ public class FlashcardSetService implements IFlashcardSetService{
     }
 
     @Override
+    @CacheEvict(value = {"flashcardSet", "flashcardSetsOfUser", "allFlashcardSets"}, allEntries = true)
     public FlashcardSetResponse saveFlashcardSet(SaveFlashcardSetRequest request) {
         User owner = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = FlashcardSet.builder()
@@ -108,6 +112,7 @@ public class FlashcardSetService implements IFlashcardSetService{
     }
 
     @Override
+    @CacheEvict(value = "flashcardSet", key = "#flashcardSetId")
     public FlashcardSetResponse updateFlashcardSet(Long flashcardSetId, UpdateFlashcardSetRequest request) {
         User user = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
@@ -145,6 +150,7 @@ public class FlashcardSetService implements IFlashcardSetService{
     }
 
     @Override
+    @Cacheable(value = "flashcardSet", key = "#id")
     public FlashcardSetResponse getFlashcardSetById(Long id) {
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
@@ -152,6 +158,7 @@ public class FlashcardSetService implements IFlashcardSetService{
     }
 
     @Override
+    @CacheEvict(value = "flashcardSet", key = "#id")
     public FlashcardSetResponse deleteFlashcardSetById(Long id) {
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
