@@ -13,7 +13,7 @@ public interface IQuizSetService {
     SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, List<MultipartFile> file, String text);
     QuizSetResponse saveQuizSet(SaveQuizSetRequest request);
     QuizSetResponse getQuizSetById(Long id);
-    List<QuizSetResponse> getQuizSetsOfUser();
+    List<QuizSetResponse> getQuizSetsOfUser(Long userId);
     List<QuizSetResponse> getAllQuizSets();
     QuizSetResponse deleteQuizSetById(Long id);
     QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request);

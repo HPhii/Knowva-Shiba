@@ -29,7 +29,7 @@ public class FlashcardSetController {
     @PostMapping(value = "/generate", consumes = {"multipart/form-data"})
     public ResponseEntity<SimplifiedFlashcardSetResponse> generateFlashcardSet(
             @RequestPart("flashcardSet") CreateFlashcardSetRequest flashcardSetRequest,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files, // Thay "file" thành "files"
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestPart(value = "text", required = false) String inputText) {
         SimplifiedFlashcardSetResponse response = flashcardSetService.generateFlashcardSet(flashcardSetRequest, files, inputText);
         return ResponseEntity.ok(response);
@@ -61,9 +61,9 @@ public class FlashcardSetController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<List<FlashcardSetResponse>> getFlashcardSetsOfUser() {
-        List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsOfUser();
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<FlashcardSetResponse>> getFlashcardSetsOfUser(@PathVariable Long userId) {
+        List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsOfUser(userId);
         return ResponseEntity.ok(responses);
     }
 

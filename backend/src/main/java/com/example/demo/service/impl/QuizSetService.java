@@ -13,7 +13,12 @@ import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.service.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,11 +30,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class QuizSetService implements IQuizSetService {
     private final QuizSetRepository quizSetRepository;
+    @Getter
     private final IAccountService accountService;
     private final QuizSetManualMapper quizSetMapper;
     private final QuizSetAIService quizSetAIService;
+    private static final Logger log = LoggerFactory.getLogger(QuizSetService.class);
 
     @Override
+    @CacheEvict(value = "quizSet", key = "#id")
     public QuizSetResponse deleteQuizSetById(Long id) {
         QuizSet quizSet = quizSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
@@ -38,6 +46,7 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
+    @Cacheable(value = "quizSet", key = "#id")
     public QuizSetResponse getQuizSetById(Long id) {
         QuizSet quizSet = quizSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
@@ -45,13 +54,14 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    public List<QuizSetResponse> getQuizSetsOfUser() {
-        User user = accountService.getCurrentAccount().getUser();
-        List<QuizSet> quizSets = quizSetRepository.findAllByOwner_Id(user.getId());
+    @Cacheable(value = "quizSetsOfUser", key = "#userId")
+    public List<QuizSetResponse> getQuizSetsOfUser(Long userId) {
+        List<QuizSet> quizSets = quizSetRepository.findAllByOwner_Id(userId);
         return quizSetMapper.mapToQuizSetResponseList(quizSets);
     }
 
     @Override
+    @Cacheable(value = "allQuizSets")
     public List<QuizSetResponse> getAllQuizSets() {
         List<QuizSet> quizSets = quizSetRepository.findAll();
         return quizSetMapper.mapToQuizSetResponseList(quizSets);
@@ -93,6 +103,7 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
+    @CacheEvict(value = {"quizSet", "quizSetsOfUser", "allQuizSets"}, allEntries = true)
     public QuizSetResponse saveQuizSet(SaveQuizSetRequest request) {
         User owner = accountService.getCurrentAccount().getUser();
 
@@ -143,6 +154,7 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
+    @CacheEvict(value = "quizSet", key = "#quizSetId")
     public QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request) {
         User user = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = findAndValidateQuizSetOwner(quizSetId, user);

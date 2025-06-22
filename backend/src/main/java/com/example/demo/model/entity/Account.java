@@ -4,7 +4,6 @@ import com.example.demo.model.enums.LoginProvider;
 import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,7 +25,6 @@ public class Account implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
     @OneToOne
@@ -93,15 +91,6 @@ public class Account implements UserDetails {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-//    @Override
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        List<GrantedAuthority> authorities = new ArrayList<>();
-//        if (role != null) {
-//            authorities.add(() -> role.name());
-//        }
-//        return authorities;
-//    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

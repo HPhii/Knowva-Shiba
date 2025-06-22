@@ -12,6 +12,12 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "mysql", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}", "-e", "SELECT 1 FROM information_schema.schemata WHERE schema_name='exe';"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   redis_container:
     image: redis:7.0
@@ -23,9 +29,14 @@ services:
     command: redis-server --appendonly yes
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
-    image: hieuphi/exe:v2
+    image: hieuphi/exe:v3
     container_name: springboot_container
     environment:
       MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
@@ -47,20 +58,26 @@ services:
       SPRING_DATA_REDIS_HOST: redis_container
       SPRING_DATA_REDIS_PORT: 6379
     depends_on:
-      - mysql_container
-      - redis_container
+      mysql_container:
+        condition: service_healthy
+      redis_container:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:
       - backend
 
   flask_app:
-    image: hieuphi/flaskapp:v1
+    image: hieuphi/flaskapp:v2
     container_name: flask_container
     environment:
-      LLAMDA_API_KEY: ${LLAMDA_API_KEY}
+      LLAMDA_API_KEY1: ${LLAMDA_API_KEY1}
+      LLAMDA_API_KEY2: ${LLAMDA_API_KEY2}
+      LLAMDA_API_KEY3: ${LLAMDA_API_KEY3}
+      LLAMDA_API_KEY4: ${LLAMDA_API_KEY4}
     depends_on:
-      - mysql_container
+      mysql_container:
+        condition: service_healthy
     ports:
       - "5000:5000"
     networks:
@@ -72,3 +89,4 @@ volumes:
 
 networks:
   backend:
+    driver: bridge

@@ -19,7 +19,7 @@ public interface IFlashcardSetService {
     FlashcardSetResponse updateFlashcardSet(Long flashcardSetId, UpdateFlashcardSetRequest request);
     FlashcardSetResponse getFlashcardSetById(Long id);
     FlashcardSetResponse deleteFlashcardSetById(Long id);
-    List<FlashcardSetResponse> getFlashcardSetsOfUser();
+    List<FlashcardSetResponse> getFlashcardSetsOfUser(Long userId);
     List<FlashcardSetResponse> getAllFlashcardSets();
     ExamModeFeedbackResponse submitExamMode(Long flashcardSetId, SubmitExamModeRequest request);
     List<Flashcard> spaceRepetitionMode(Long flashcardSetId, Integer dailyLimit);
