@@ -1,46 +1,17 @@
-version: '3.8'
+version: '3'
 services:
-  mysql_container:
-    image: mysql:8.0
-    container_name: mysql_db_container
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: exe
+  redis_container:
+    image: redis:7.0
+    container_name: redis_container
     ports:
-      - "3307:3306"
+      - "6379:6379"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - redis_data:/data
+    command: redis-server --appendonly yes
     networks:
       - backend
-
-  app:
-    image: hieuphi/exe:v2
-    container_name: springboot_container
-    environment:
-      MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      CLIENT_URL: ${CLIENT_URL}
-    depends_on:
-      - mysql_container
-    ports:
-      - "8080:8080"
-    networks:
-      - backend
-
-volumes:
-  mysql_data:
-
-networks:
-  backend:
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
