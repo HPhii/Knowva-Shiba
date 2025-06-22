@@ -1,6 +1,7 @@
 package com.example.demo.model.entity.flashcard;
 
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.CardStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,4 +36,7 @@ public class FlashcardProgress {
     private Integer repetitionCount;
 
     private LocalDate nextDueDate;
+
+    @Enumerated(EnumType.STRING)
+    private CardStatus status;
 }

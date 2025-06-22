@@ -31,8 +31,6 @@ public class FlashcardSetManualMapper {
                 flashcardSet.getLanguage(),
                 flashcardSet.getCardType(),
                 flashcardSet.getVisibility(),
-                flashcardSet.getCreatedAt(),
-                flashcardSet.getUpdatedAt(),
                 flashcardResponses
         );
     }

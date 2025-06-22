@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SubmitExamModeRequest;
@@ -78,15 +77,6 @@ public class FlashcardSetController {
             @PathVariable Long flashcardSetId,
             @RequestBody SubmitExamModeRequest request) {
         ExamModeFeedbackResponse response = flashcardSetService.submitExamMode(flashcardSetId, request);
-        return ResponseEntity.ok(response);
-    }
-
-    // Space Repetition Mode
-    @GetMapping("/{flashcardSetId}/space-repetition")
-    public ResponseEntity<List<Flashcard>> spaceRepetitionMode(
-            @PathVariable Long flashcardSetId,
-            @RequestParam Integer dailyLimit) {
-        List<Flashcard> response = flashcardSetService.spaceRepetitionMode(flashcardSetId, dailyLimit);
         return ResponseEntity.ok(response);
     }
 
