@@ -191,51 +191,11 @@ public class FlashcardSetService implements IFlashcardSetService{
         return new ExamModeFeedbackResponse(score, whatWasCorrect, whatWasIncorrect, whatCouldHaveIncluded);
     }
 
-    // Space Repetition Mode: Lên lịch học và test (implementing)
-    @Override
-    public List<Flashcard> spaceRepetitionMode(Long flashcardSetId, Integer dailyLimit) {
-        User user = accountService.getCurrentAccount().getUser();
-        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
-                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
-
-        List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcardSet);
-        List<Flashcard> dueFlashcards = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-
-        for (Flashcard flashcard : flashcardSet.getFlashcards()) {
-            FlashcardProgress progress = progressList.stream()
-                    .filter(p -> p.getFlashcard().getId().equals(flashcard.getId()))
-                    .findFirst()
-                    .orElse(FlashcardProgress.builder()
-                            .user(user)
-                            .flashcard(flashcard)
-                            .easeFactor(2.5f)
-                            .repetitionCount(0)
-                            .nextDueDate(today)
-                            .build());
-
-            if (progress.getNextDueDate().isBefore(today.plusDays(1))) {
-                dueFlashcards.add(flashcard);
-                progress.setLastReviewedAt(LocalDateTime.now());
-                progress.setRepetitionCount(progress.getRepetitionCount() + 1);
-                progress.setNextDueDate(today.plusDays(calculateInterval(progress.getRepetitionCount(), progress.getEaseFactor())));
-                flashcardProgressRepository.save(progress);
-            }
-        }
-        return dueFlashcards.stream().limit(dailyLimit).collect(Collectors.toList());
-    }
-
     @Override
     public SimplifiedQuizSetResponse generateQuizMode(Long flashcardSetId, String language, String questionType, int maxQuestions) {
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
         String aiResponse = flaskAIService.callFlaskAIForQuizGeneration(flashcardSet, language, questionType, maxQuestions);
         return Parser.parseQuiz(aiResponse);
-    }
-
-    private int calculateInterval(int repetitionCount, float easeFactor) {
-        if (repetitionCount == 1) return 1;
-        if (repetitionCount == 2) return 6;
-        return (int) (calculateInterval(repetitionCount - 1, easeFactor) * easeFactor);
     }
 }

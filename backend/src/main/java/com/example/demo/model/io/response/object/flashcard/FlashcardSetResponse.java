@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -21,7 +20,5 @@ public class FlashcardSetResponse {
     private String language;
     private CardType cardType;
     private Visibility visibility;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<FlashcardResponse> flashcards;
 }

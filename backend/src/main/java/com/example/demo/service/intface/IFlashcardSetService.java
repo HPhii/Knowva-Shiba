@@ -22,6 +22,5 @@ public interface IFlashcardSetService {
     List<FlashcardSetResponse> getFlashcardSetsOfUser(Long userId);
     List<FlashcardSetResponse> getAllFlashcardSets();
     ExamModeFeedbackResponse submitExamMode(Long flashcardSetId, SubmitExamModeRequest request);
-    List<Flashcard> spaceRepetitionMode(Long flashcardSetId, Integer dailyLimit);
     SimplifiedQuizSetResponse generateQuizMode(Long flashcardSetId, String language, String questionType, int maxQuestions);
 }
