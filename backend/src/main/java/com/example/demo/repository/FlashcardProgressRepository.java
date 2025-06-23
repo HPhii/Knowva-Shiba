@@ -4,9 +4,11 @@ import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.entity.flashcard.FlashcardProgress;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
+import com.example.demo.model.enums.CardStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +19,9 @@ public interface FlashcardProgressRepository extends JpaRepository<FlashcardProg
     Optional<FlashcardProgress> findByUserAndFlashcard(User user, Flashcard flashcard);
 
     Optional<List<FlashcardProgress>> findByUser_Id(Long userId);
+
+    long countByUserAndFlashcard_FlashcardSetAndStatus(User user, FlashcardSet flashcardSet, CardStatus status);
+
+    long countByUserAndFlashcard_FlashcardSetAndStatusAndNextDueDateBefore(
+            User user, FlashcardSet flashcardFlashcardSet, CardStatus status, LocalDate nextDueDateBefore);
 }

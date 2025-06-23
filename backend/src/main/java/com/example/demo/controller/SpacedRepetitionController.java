@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
-import com.example.demo.service.SpacedRepetitionService;
+import com.example.demo.service.intface.ISpacedRepetitionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class SpacedRepetitionController {
-
-    private final SpacedRepetitionService spacedRepetitionService;
+    private final ISpacedRepetitionService spacedRepetitionService;
 
     @GetMapping("/mode-data")
     public ResponseEntity<SpacedRepetitionModeData> getSpacedRepetitionModeData(
@@ -31,8 +30,9 @@ public class SpacedRepetitionController {
     @PostMapping("/set-new-flashcards-per-day")
     public ResponseEntity<Void> setNewFlashcardsPerDay(
             @RequestParam Long userId,
+            @RequestParam Long flashcardSetId,
             @RequestParam Integer newFlashcardsPerDay) {
-        spacedRepetitionService.setNewFlashcardsPerDay(userId, newFlashcardsPerDay);
+        spacedRepetitionService.setNewFlashcardsPerDay(userId, flashcardSetId, newFlashcardsPerDay);
         return ResponseEntity.ok().build();
     }
 

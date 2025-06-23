@@ -1,19 +1,13 @@
-package com.example.demo.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.entity.User;
-import com.example.demo.model.entity.flashcard.Flashcard;
-import com.example.demo.model.entity.flashcard.FlashcardProgress;
-import com.example.demo.model.entity.flashcard.FlashcardSet;
-import com.example.demo.model.entity.flashcard.UserSpacedRepetitionSettings;
+import com.example.demo.model.entity.flashcard.*;
 import com.example.demo.model.enums.CardStatus;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
-import com.example.demo.repository.FlashcardProgressRepository;
-import com.example.demo.repository.FlashcardRepository;
-import com.example.demo.repository.FlashcardSetRepository;
-import com.example.demo.repository.UserRepository;
-import com.example.demo.repository.UserSpacedRepetitionSettingsRepository;
+import com.example.demo.repository.*;
+import com.example.demo.service.intface.ISpacedRepetitionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,108 +20,119 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
-public class SpacedRepetitionService {
-
+public class SpacedRepetitionService implements ISpacedRepetitionService {
     private static final float DEFAULT_EASE_FACTOR = 2.5f;
     private static final int MINIMUM_INTERVAL = 1;
 
+    private static final String SPACED_REP = "Lặp lại ngắt quãng: Chế độ này giúp bạn ghi nhớ thông tin bằng cách xem lại các thẻ nhớ ở những khoảng thời gian tối ưu.";
+    private static final String NEW_DAY = "Hôm nay là ngày mới, hãy bắt đầu ôn tập!";
+
     private final FlashcardProgressRepository flashcardProgressRepository;
-    private final UserSpacedRepetitionSettingsRepository settingsRepository;
+    private final FlashcardSetProgressSettingsRepository flashcardSetProgressSettingsRepository;
     private final FlashcardRepository flashcardRepository;
     private final UserRepository userRepository;
     private final FlashcardSetRepository flashcardSetRepository;
 
     // Lấy dữ liệu chế độ học
+    @Override
     public SpacedRepetitionModeData getModeData(Long userId, Long flashcardSetId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
-        Optional<List<FlashcardProgress>> progressListOpt = flashcardProgressRepository.findByUser_Id(userId);
         SpacedRepetitionModeData modeData = new SpacedRepetitionModeData();
+        Optional<List<FlashcardProgress>> progressListOpt = flashcardProgressRepository.findByUser_Id(userId);
 
         if (progressListOpt.isEmpty() || progressListOpt.get().isEmpty()) {
             modeData.setFirstTime(true);
-            modeData.setMessage("Spaced Repetition: This mode helps you retain information...");
-            UserSpacedRepetitionSettings settings = settingsRepository.findByUser_Id(userId)
+            modeData.setMessage(SPACED_REP);
+            FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
                     .orElseGet(() -> {
-                        UserSpacedRepetitionSettings newSettings = UserSpacedRepetitionSettings.builder().user(user).build();
-                        return settingsRepository.save(newSettings);
+                        FlashcardSetProgressSettings newSettings = FlashcardSetProgressSettings.builder()
+                                .user(user)
+                                .flashcardSet(flashcardSet)
+                                .newFlashcardsPerDay(10)
+                                .build();
+                        return flashcardSetProgressSettingsRepository.save(newSettings);
                     });
-            modeData.setNewFlashcardsPerDay(settings.getNewFlashcardsPerDay() != null ? settings.getNewFlashcardsPerDay() : 10);
+            modeData.setNewFlashcardsPerDay(settings.getNewFlashcardsPerDay());
             modeData.setNewCardsCount(0);
             modeData.setKnowCardsCount(0);
-            // Khởi tạo FlashcardProgress khi lần đầu
             initializeFlashcardProgress(userId, flashcardSetId);
         } else {
+            FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
+                    .orElseThrow(() -> new EntityNotFoundException("Settings not found"));
+            modeData.setNewFlashcardsPerDay(settings.getNewFlashcardsPerDay());
             modeData.setFirstTime(false);
-            modeData.setMessage("New Day");
-
-            List<FlashcardProgress> progressList = progressListOpt.get().stream()
-                    .filter(p -> p.getFlashcard().getFlashcardSet().getId().equals(flashcardSetId))
-                    .filter(p -> p.getStatus() != CardStatus.ARCHIVED)
-                    .collect(Collectors.toList());
-
+            modeData.setMessage(NEW_DAY);
             LocalDate today = LocalDate.now();
-            long newCardsCount = progressList.stream()
-                    .filter(p -> p.getStatus() == CardStatus.NEW)
-                    .count();
-            long reviewCardsCount = progressList.stream()
-                    .filter(p -> p.getNextDueDate() != null && !p.getNextDueDate().isAfter(today))
-                    .filter(p -> p.getStatus() == CardStatus.KNOWN)
-                    .count();
-
+            long newCardsCount = flashcardProgressRepository.countByUserAndFlashcard_FlashcardSetAndStatus(user, flashcardSet, CardStatus.NEW);
+            long reviewCardsCount = flashcardProgressRepository.countByUserAndFlashcard_FlashcardSetAndStatusAndNextDueDateBefore(
+                    user, flashcardSet, CardStatus.KNOWN, today);
             modeData.setNewCardsCount((int) newCardsCount);
             modeData.setKnowCardsCount((int) reviewCardsCount);
         }
         return modeData;
     }
 
-    // Cài đặt số flashcard mới mỗi ngày
-    public void setNewFlashcardsPerDay(Long userId, Integer newFlashcardsPerDay) {
+    // Cài đặt số flashcard mới mỗi ngày cho một bộ flashcard cụ thể
+    @Override
+    public void setNewFlashcardsPerDay(Long userId, Long flashcardSetId, Integer newFlashcardsPerDay) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
-        UserSpacedRepetitionSettings settings = settingsRepository.findByUser_Id(userId)
-                .orElseGet(() -> {
-                    UserSpacedRepetitionSettings newSettings = UserSpacedRepetitionSettings.builder().user(user).build();
-                    return newSettings;
-                });
+        FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
+                .orElseGet(() -> FlashcardSetProgressSettings.builder()
+                        .user(user)
+                        .flashcardSet(flashcardSet)
+                        .newFlashcardsPerDay(newFlashcardsPerDay)
+                        .build());
         settings.setNewFlashcardsPerDay(newFlashcardsPerDay);
-        settingsRepository.save(settings);
+        flashcardSetProgressSettingsRepository.save(settings);
     }
 
     // Bắt đầu phiên học
+    @Override
     public List<Flashcard> startStudySession(Long userId, Long flashcardSetId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        UserSpacedRepetitionSettings settings = settingsRepository.findByUser_Id(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Settings not found"));
-
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
+                .orElseThrow(() -> new EntityNotFoundException("Settings not found"));
 
         List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcardSet).stream()
                 .filter(p -> p.getStatus() != CardStatus.ARCHIVED)
                 .collect(Collectors.toList());
 
-        List<FlashcardProgress> newProgressList = progressList.stream()
-                .filter(p -> p.getStatus() == CardStatus.NEW)
-                .limit(settings.getNewFlashcardsPerDay())
-                .collect(Collectors.toList());
-
-        LocalDate today = LocalDate.now();
-        List<FlashcardProgress> reviewProgressList = progressList.stream()
-                .filter(p -> p.getNextDueDate() != null && !p.getNextDueDate().isAfter(today))
-                .filter(p -> p.getStatus() == CardStatus.KNOWN)
-                .collect(Collectors.toList());
+        List<FlashcardProgress> newProgressList = getNewFlashcards(progressList, settings.getNewFlashcardsPerDay());
+        List<FlashcardProgress> reviewProgressList = getReviewFlashcards(progressList, LocalDate.now());
 
         return Stream.concat(newProgressList.stream(), reviewProgressList.stream())
                 .map(FlashcardProgress::getFlashcard)
                 .collect(Collectors.toList());
     }
 
+    private List<FlashcardProgress> getNewFlashcards(List<FlashcardProgress> progressList, int limit) {
+        return progressList.stream()
+                .filter(p -> p.getStatus() == CardStatus.NEW)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    private List<FlashcardProgress> getReviewFlashcards(List<FlashcardProgress> progressList, LocalDate today) {
+        return progressList.stream()
+                .filter(p -> p.getNextDueDate() != null && !p.getNextDueDate().isAfter(today))
+                .filter(p -> p.getStatus() == CardStatus.KNOWN)
+                .collect(Collectors.toList());
+    }
+
     // Gửi kết quả ôn tập
+    @Override
     public StudyProgressStats submitReview(Long userId, Long flashcardId, Long flashcardSetId, Boolean knowsCard) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -155,6 +160,7 @@ public class SpacedRepetitionService {
         return stats;
     }
 
+    @Override
     public void updateFlashcardProgress(FlashcardProgress progress, boolean knowsCard) {
         if (progress.getRepetitionCount() == null) {
             progress.setRepetitionCount(0);
@@ -167,9 +173,11 @@ public class SpacedRepetitionService {
 
         if (knowsCard) {
             progress.setStatus(CardStatus.KNOWN);
+            progress.setEaseFactor(progress.getEaseFactor() + 0.1f);
             calculateNextDueDate(progress);
         } else {
             progress.setStatus(CardStatus.LEARNING);
+            progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.2f));
             progress.setRepetitionCount(0);
             progress.setNextDueDate(LocalDate.now().plusDays(MINIMUM_INTERVAL));
         }

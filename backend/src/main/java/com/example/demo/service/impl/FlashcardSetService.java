@@ -3,34 +3,34 @@ package com.example.demo.service.impl;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.FlashcardSetManualMapper;
 import com.example.demo.model.entity.User;
-import com.example.demo.model.entity.flashcard.*;
+import com.example.demo.model.entity.flashcard.Flashcard;
+import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.io.request.flashcard.*;
-import com.example.demo.model.io.response.object.flashcard.*;
+import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
+import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
+import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
-import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.repository.FlashcardProgressRepository;
+import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.service.FlashcardSetAIService;
 import com.example.demo.service.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
 import com.example.demo.utils.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class FlashcardSetService implements IFlashcardSetService{
+public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardSetRepository flashcardSetRepository;
     private final FlashcardProgressRepository flashcardProgressRepository;
     private final FlaskAIService flaskAIService;
