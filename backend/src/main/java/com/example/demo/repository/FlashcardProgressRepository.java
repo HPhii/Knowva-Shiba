@@ -24,4 +24,6 @@ public interface FlashcardProgressRepository extends JpaRepository<FlashcardProg
 
     long countByUserAndFlashcard_FlashcardSetAndStatusAndNextDueDateBefore(
             User user, FlashcardSet flashcardFlashcardSet, CardStatus status, LocalDate nextDueDateBefore);
+
+    List<FlashcardProgress> findByNextDueDate(LocalDate nextDueDate);
 }

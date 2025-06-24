@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.entity.flashcard.Flashcard;
+import com.example.demo.model.entity.flashcard.FlashcardAttempt;
+import com.example.demo.model.io.dto.PerformanceStats;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
 import com.example.demo.service.intface.ISpacedRepetitionService;
@@ -49,8 +51,24 @@ public class SpacedRepetitionController {
             @RequestParam Long userId,
             @RequestParam Long flashcardId,
             @RequestParam Long flashcardSetId,
-            @RequestParam Boolean knowsCard) {
-        StudyProgressStats stats = spacedRepetitionService.submitReview(userId, flashcardId, flashcardSetId, knowsCard);
+            @RequestParam int quality) {
+        StudyProgressStats stats = spacedRepetitionService.submitReview(userId, flashcardId, flashcardSetId, quality);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/study-history")
+    public ResponseEntity<List<FlashcardAttempt>> getStudyHistory(
+            @RequestParam Long userId,
+            @RequestParam Long flashcardSetId) {
+        List<FlashcardAttempt> attempts = spacedRepetitionService.getStudyHistory(userId, flashcardSetId);
+        return ResponseEntity.ok(attempts);
+    }
+
+    @GetMapping("/performance-stats")
+    public ResponseEntity<PerformanceStats> getPerformanceStats(
+            @RequestParam Long userId,
+            @RequestParam Long flashcardSetId) {
+        PerformanceStats stats = spacedRepetitionService.getPerformanceStats(userId, flashcardSetId);
         return ResponseEntity.ok(stats);
     }
 }

@@ -11,4 +11,6 @@ import java.util.List;
 @Repository
 public interface FlashcardAttemptRepository extends JpaRepository<FlashcardAttempt, Long> {
     List<FlashcardAttempt> findByUserAndFlashcard(User user, Flashcard flashcard);
+
+    List<FlashcardAttempt> findByUserIdAndFlashcard_FlashcardSet_Id(Long userId, Long flashcardFlashcardSetId);
 }

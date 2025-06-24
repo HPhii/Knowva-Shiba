@@ -4,6 +4,7 @@ import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.*;
 import com.example.demo.model.enums.CardStatus;
+import com.example.demo.model.io.dto.PerformanceStats;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
 import com.example.demo.repository.*;
@@ -26,12 +27,14 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
 
     private static final String SPACED_REP = "Lặp lại ngắt quãng: Chế độ này giúp bạn ghi nhớ thông tin bằng cách xem lại các thẻ nhớ ở những khoảng thời gian tối ưu.";
     private static final String NEW_DAY = "Hôm nay là ngày mới, hãy bắt đầu ôn tập!";
+    private static final int MAX_INTERVAL = 365;
 
     private final FlashcardProgressRepository flashcardProgressRepository;
     private final FlashcardSetProgressSettingsRepository flashcardSetProgressSettingsRepository;
     private final FlashcardRepository flashcardRepository;
     private final UserRepository userRepository;
     private final FlashcardSetRepository flashcardSetRepository;
+    private final FlashcardAttemptRepository flashcardAttemptRepository;
 
     // Lấy dữ liệu chế độ học
     @Override
@@ -79,6 +82,10 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
     // Cài đặt số flashcard mới mỗi ngày cho một bộ flashcard cụ thể
     @Override
     public void setNewFlashcardsPerDay(Long userId, Long flashcardSetId, Integer newFlashcardsPerDay) {
+        if (newFlashcardsPerDay == null || newFlashcardsPerDay < 0) {
+            throw new IllegalArgumentException("New flashcards per day must be a non-negative integer.");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
@@ -112,9 +119,15 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
         List<FlashcardProgress> newProgressList = getNewFlashcards(progressList, settings.getNewFlashcardsPerDay());
         List<FlashcardProgress> reviewProgressList = getReviewFlashcards(progressList, LocalDate.now());
 
-        return Stream.concat(newProgressList.stream(), reviewProgressList.stream())
+        List<Flashcard> result = Stream.concat(newProgressList.stream(), reviewProgressList.stream())
                 .map(FlashcardProgress::getFlashcard)
                 .collect(Collectors.toList());
+
+        if (result.isEmpty()) {
+            throw new IllegalStateException("No flashcards available for study session.");
+        }
+
+        return result;
     }
 
     private List<FlashcardProgress> getNewFlashcards(List<FlashcardProgress> progressList, int limit) {
@@ -133,7 +146,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
 
     // Gửi kết quả ôn tập
     @Override
-    public StudyProgressStats submitReview(Long userId, Long flashcardId, Long flashcardSetId, Boolean knowsCard) {
+    public StudyProgressStats submitReview(Long userId, Long flashcardId, Long flashcardSetId, int quality) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         Flashcard flashcard = flashcardRepository.findById(flashcardId)
@@ -142,7 +155,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
         FlashcardProgress progress = flashcardProgressRepository.findByUserAndFlashcard(user, flashcard)
                 .orElse(FlashcardProgress.builder().user(user).flashcard(flashcard).build());
 
-        updateFlashcardProgress(progress, knowsCard);
+        updateFlashcardProgress(progress, quality);
         flashcardProgressRepository.save(progress);
 
         List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcard.getFlashcardSet()).stream()
@@ -161,42 +174,79 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
     }
 
     @Override
-    public void updateFlashcardProgress(FlashcardProgress progress, boolean knowsCard) {
+    public void updateFlashcardProgress(FlashcardProgress progress, int quality) {
         if (progress.getRepetitionCount() == null) {
             progress.setRepetitionCount(0);
             progress.setEaseFactor(DEFAULT_EASE_FACTOR);
+            progress.setInterval(MINIMUM_INTERVAL);
             progress.setStatus(CardStatus.NEW);
         }
 
         progress.setLastReviewedAt(LocalDateTime.now());
-        progress.setRepetitionCount(progress.getRepetitionCount() + 1);
 
-        if (knowsCard) {
+        if (quality >= 3) {
+            int n = progress.getRepetitionCount() + 1;
+            progress.setRepetitionCount(n);
+            progress.setEaseFactor(calculateEaseFactor(progress.getEaseFactor(), quality));
+            int previousInterval = progress.getInterval();
+            int newInterval = calculateInterval(n, progress.getEaseFactor(), previousInterval);
+            progress.setInterval(newInterval);
+
+            progress.setNextDueDate(progress.getLastReviewedAt().toLocalDate().plusDays(progress.getInterval()));
             progress.setStatus(CardStatus.KNOWN);
-            progress.setEaseFactor(progress.getEaseFactor() + 0.1f);
-            calculateNextDueDate(progress);
         } else {
-            progress.setStatus(CardStatus.LEARNING);
-            progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.2f));
             progress.setRepetitionCount(0);
-            progress.setNextDueDate(LocalDate.now().plusDays(MINIMUM_INTERVAL));
+            if (quality == 0) {
+                // Hình phạt nặng hơn cho quality = 0
+                progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.3f));
+            } else {
+                progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.2f));
+            }
+            progress.setInterval(MINIMUM_INTERVAL);
+            progress.setNextDueDate(progress.getLastReviewedAt().toLocalDate().plusDays(1));
+            progress.setStatus(CardStatus.LEARNING);
         }
+
+        FlashcardAttempt attempt = FlashcardAttempt.builder()
+                .user(progress.getUser())
+                .flashcard(progress.getFlashcard())
+                .flashcardProgress(progress)
+                .attemptDate(LocalDateTime.now())
+                .result(quality >= 3 ? FlashcardAttempt.AttemptResult.KNOW : FlashcardAttempt.AttemptResult.DONT_KNOW)
+                .build();
+        flashcardAttemptRepository.save(attempt);
     }
 
-    private void calculateNextDueDate(FlashcardProgress progress) {
-        int interval;
-        switch (progress.getRepetitionCount()) {
-            case 1:
-                interval = 1; // Ôn lại sau 1 ngày
-                break;
-            case 2:
-                interval = 6; // Ôn lại sau 6 ngày
-                break;
-            default:
-                interval = (int) ((progress.getRepetitionCount() - 1) * progress.getEaseFactor());
-                break;
-        }
-        progress.setNextDueDate(LocalDate.now().plusDays(interval));
+    private float calculateEaseFactor(float currentEase, int quality) {
+        float newEase = currentEase + (0.1f - (5 - quality) * (0.08f + (5 - quality) * 0.02f));
+        return Math.max(1.3f, newEase);
+    }
+
+    private int calculateInterval(int repetitionCount, float easeFactor, int lastInterval) {
+        if (repetitionCount == 1) return 1;       // first time → 1 day
+        if (repetitionCount == 2) return 6;       // second time → 6 days
+        int interval = (int) (lastInterval * easeFactor);  // subsequent times → last interval * ease factor
+        return Math.min(interval, MAX_INTERVAL);
+    }
+
+
+
+    @Override
+    public List<FlashcardAttempt> getStudyHistory(Long userId, Long flashcardSetId) {
+        return flashcardAttemptRepository.findByUserIdAndFlashcard_FlashcardSet_Id(userId, flashcardSetId);
+    }
+
+    @Override
+    public PerformanceStats getPerformanceStats(Long userId, Long flashcardSetId) {
+        List<FlashcardAttempt> attempts = flashcardAttemptRepository.findByUserIdAndFlashcard_FlashcardSet_Id(userId, flashcardSetId);
+        long knowCount = attempts.stream().filter(a -> a.getResult() == FlashcardAttempt.AttemptResult.KNOW).count();
+        long total = attempts.size();
+        double retentionRate = total > 0 ? (double) knowCount / total * 100 : 0;
+
+        PerformanceStats stats = new PerformanceStats();
+        stats.setRetentionRate(retentionRate);
+        stats.setTotalAttempts(total);
+        return stats;
     }
 
     private void initializeFlashcardProgress(Long userId, Long flashcardSetId) {

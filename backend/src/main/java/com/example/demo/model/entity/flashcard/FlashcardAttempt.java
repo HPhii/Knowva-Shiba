@@ -28,6 +28,10 @@ public class FlashcardAttempt {
     @JoinColumn(name = "flashcard_id", nullable = false)
     private Flashcard flashcard;
 
+    @ManyToOne
+    @JoinColumn(name = "flashcard_progress_id", nullable = false)
+    private FlashcardProgress flashcardProgress;
+
     @Column(name = "attempt_date", nullable = false)
     private LocalDateTime attemptDate;
 
