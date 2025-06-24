@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.custom;
 
 import com.example.demo.model.entity.Account;
 import com.example.demo.model.enums.LoginProvider;

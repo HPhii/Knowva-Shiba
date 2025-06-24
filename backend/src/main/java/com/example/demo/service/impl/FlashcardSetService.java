@@ -12,8 +12,8 @@ import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSe
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.FlashcardSetRepository;
-import com.example.demo.service.FlashcardSetAIService;
-import com.example.demo.service.FlaskAIService;
+import com.example.demo.service.template.FlashcardSetAIService;
+import com.example.demo.service.template.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
 import com.example.demo.utils.Parser;

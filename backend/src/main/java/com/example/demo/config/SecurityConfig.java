@@ -1,7 +1,7 @@
 package com.example.demo.config;
 
-import com.example.demo.service.AuthenticationUserDetailsService;
-import com.example.demo.service.CustomOAuth2UserService;
+import com.example.demo.service.custom.AuthenticationUserDetailsService;
+import com.example.demo.service.custom.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

@@ -10,7 +10,7 @@ import com.example.demo.model.io.request.quiz.*;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizSetRepository;
-import com.example.demo.service.QuizSetAIService;
+import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
 import lombok.Getter;

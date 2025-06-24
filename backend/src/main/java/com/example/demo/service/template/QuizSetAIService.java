@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.template;
 
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.entity.quiz.QuizAnswer;
