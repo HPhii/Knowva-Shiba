@@ -19,7 +19,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class FlashcardSet {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -1,9 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.entity.flashcard.Flashcard;
+import com.example.demo.model.entity.flashcard.FlashcardAttempt;
+import com.example.demo.model.io.dto.PerformanceStats;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
-import com.example.demo.service.SpacedRepetitionService;
+import com.example.demo.service.intface.ISpacedRepetitionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class SpacedRepetitionController {
-
-    private final SpacedRepetitionService spacedRepetitionService;
+    private final ISpacedRepetitionService spacedRepetitionService;
 
     @GetMapping("/mode-data")
     public ResponseEntity<SpacedRepetitionModeData> getSpacedRepetitionModeData(
@@ -31,8 +32,9 @@ public class SpacedRepetitionController {
     @PostMapping("/set-new-flashcards-per-day")
     public ResponseEntity<Void> setNewFlashcardsPerDay(
             @RequestParam Long userId,
+            @RequestParam Long flashcardSetId,
             @RequestParam Integer newFlashcardsPerDay) {
-        spacedRepetitionService.setNewFlashcardsPerDay(userId, newFlashcardsPerDay);
+        spacedRepetitionService.setNewFlashcardsPerDay(userId, flashcardSetId, newFlashcardsPerDay);
         return ResponseEntity.ok().build();
     }
 
@@ -49,8 +51,24 @@ public class SpacedRepetitionController {
             @RequestParam Long userId,
             @RequestParam Long flashcardId,
             @RequestParam Long flashcardSetId,
-            @RequestParam Boolean knowsCard) {
-        StudyProgressStats stats = spacedRepetitionService.submitReview(userId, flashcardId, flashcardSetId, knowsCard);
+            @RequestParam int quality) {
+        StudyProgressStats stats = spacedRepetitionService.submitReview(userId, flashcardId, flashcardSetId, quality);
+        return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/study-history")
+    public ResponseEntity<List<FlashcardAttempt>> getStudyHistory(
+            @RequestParam Long userId,
+            @RequestParam Long flashcardSetId) {
+        List<FlashcardAttempt> attempts = spacedRepetitionService.getStudyHistory(userId, flashcardSetId);
+        return ResponseEntity.ok(attempts);
+    }
+
+    @GetMapping("/performance-stats")
+    public ResponseEntity<PerformanceStats> getPerformanceStats(
+            @RequestParam Long userId,
+            @RequestParam Long flashcardSetId) {
+        PerformanceStats stats = spacedRepetitionService.getPerformanceStats(userId, flashcardSetId);
         return ResponseEntity.ok(stats);
     }
 }

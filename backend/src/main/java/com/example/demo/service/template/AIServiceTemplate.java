@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.template;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.client.RestTemplate;
