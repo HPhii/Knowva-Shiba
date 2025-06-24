@@ -37,6 +37,9 @@ public class FlashcardSet {
     @Column
     private String language;
 
+    @Column(unique = true)
+    private String accessToken;
+
     @Enumerated(EnumType.STRING)
     private CardType cardType;
 

@@ -52,8 +52,10 @@ public class QuizSetController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<QuizSetResponse> getQuizSetById(@PathVariable Long id) {
-        QuizSetResponse response = quizSetService.getQuizSetById(id);
+    public ResponseEntity<QuizSetResponse> getQuizSetById(
+            @PathVariable Long id,
+            @RequestParam(required = false) String token) {
+        QuizSetResponse response = quizSetService.getQuizSetById(id, token);
         return ResponseEntity.ok(response);
     }
 

@@ -40,6 +40,9 @@ public class QuizSet {
 
     private Integer maxQuestions;
 
+    @Column(unique = true)
+    private String accessToken;
+
     @Enumerated(EnumType.STRING)
     private Visibility visibility;
 
