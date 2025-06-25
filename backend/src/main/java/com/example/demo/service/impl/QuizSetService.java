@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +49,7 @@ public class QuizSetService implements IQuizSetService {
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
 
         if (!quizSet.getOwner().getId().equals(currentUser.getId())) {
-            throw new SecurityException("You are not authorized to delete this QuizSet");
+            throw new SecurityException("Only the owner can delete this QuizSet");
         }
 
         quizSetRepository.delete(quizSet);
@@ -62,7 +63,7 @@ public class QuizSetService implements IQuizSetService {
         QuizSet quizSet = quizSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
 
-        checkAccessPermission(quizSet, currentUser, token);
+        checkAccessPermission(quizSet, currentUser, token, Permission.VIEW);
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
@@ -76,8 +77,19 @@ public class QuizSetService implements IQuizSetService {
     @Override
     @Cacheable(value = "allQuizSets")
     public List<QuizSetResponse> getAllQuizSets() {
-        List<QuizSet> quizSets = quizSetRepository.findAll();
-        return quizSetMapper.mapToQuizSetResponseList(quizSets);
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<QuizSet> allQuizSets = quizSetRepository.findAll();
+        List<QuizSet> accessibleQuizSets = allQuizSets.stream()
+                .filter(quizSet -> {
+                    try {
+                        checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
+                        return true;
+                    } catch (SecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+        return quizSetMapper.mapToQuizSetResponseList(accessibleQuizSets);
     }
 
     @Override
@@ -168,7 +180,6 @@ public class QuizSetService implements IQuizSetService {
         }
 
         quizSet = quizSetRepository.save(quizSet);
-
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
@@ -179,17 +190,7 @@ public class QuizSetService implements IQuizSetService {
         QuizSet quizSet = quizSetRepository.findById(quizSetId)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
 
-        if (!quizSet.getOwner().getId().equals(currentUser.getId())) {
-            if (quizSet.getVisibility() == Visibility.PRIVATE) {
-                Optional<QuizAccessControl> access = quizAccessControlRepository
-                        .findByQuizSetAndInvitedUser(quizSet, currentUser);
-                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT) {
-                    throw new SecurityException("You do not have permission to edit this QuizSet");
-                }
-            } else {
-                throw new SecurityException("You are not authorized to update this QuizSet");
-            }
-        }
+        checkAccessPermission(quizSet, currentUser, null, Permission.EDIT);
 
         updateQuizSetInfo(quizSet, request);
 
@@ -229,25 +230,42 @@ public class QuizSetService implements IQuizSetService {
         quizAccessControlRepository.save(accessControl);
     }
 
-    private void checkAccessPermission(QuizSet quizSet, User currentUser, String token) {
-        if (quizSet.getVisibility() == Visibility.PUBLIC) {
+    private void checkAccessPermission(QuizSet quizSet, User currentUser, String token, Permission requiredPermission) {
+        if (quizSet.getOwner().getId().equals(currentUser.getId())) {
             return;
-        } else if (quizSet.getVisibility() == Visibility.HIDDEN) {
+        }
+
+        if (quizSet.getVisibility() == Visibility.PUBLIC) {
+            if (requiredPermission == Permission.EDIT) {
+                throw new SecurityException("You do not have edit permission for this QuizSet");
+            }
+            return;
+        }
+
+        if (quizSet.getVisibility() == Visibility.HIDDEN) {
             if (token == null || !token.equals(quizSet.getAccessToken())) {
-                throw new SecurityException("Invalid or missing token for hidden QuizSet");
+                throw new SecurityException("Invalid token for hidden QuizSet");
             }
-        } else if (quizSet.getVisibility() == Visibility.PRIVATE) {
-            if (quizSet.getOwner().getId().equals(currentUser.getId())) {
-                return;
+            if (requiredPermission == Permission.EDIT) {
+                Optional<QuizAccessControl> access = quizAccessControlRepository
+                        .findByQuizSetAndInvitedUser(quizSet, currentUser);
+                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT) {
+                    throw new SecurityException("You do not have edit permission for this hidden QuizSet");
+                }
             }
+            return;
+        }
+
+        if (quizSet.getVisibility() == Visibility.PRIVATE) {
             Optional<QuizAccessControl> access = quizAccessControlRepository
                     .findByQuizSetAndInvitedUser(quizSet, currentUser);
-            if (access.isEmpty() || access.get().getPermission() != Permission.VIEW) {
-                throw new SecurityException("You do not have permission to access this QuizSet");
+            if (access.isEmpty() || access.get().getPermission().ordinal() < requiredPermission.ordinal()) {
+                throw new SecurityException("You do not have sufficient permission");
             }
-        } else {
-            throw new SecurityException("Access denied");
+            return;
         }
+
+        throw new SecurityException("Access denied");
     }
 
     private void updateQuizSetInfo(QuizSet quizSet, UpdateQuizSetRequest request) {
@@ -265,10 +283,8 @@ public class QuizSetService implements IQuizSetService {
         for (UpdateQuizQuestionRequest qReq : questionRequests) {
             QuizQuestion question = findOrCreateQuestion(quizSet, qReq);
             updateQuestionFields(question, qReq);
-
             List<QuizAnswer> updatedAnswers = updateAnswers(question, qReq.getAnswers());
             question.setAnswers(updatedAnswers);
-
             updatedQuestions.add(question);
         }
         return updatedQuestions;

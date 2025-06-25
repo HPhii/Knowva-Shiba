@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: exe
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -36,7 +36,7 @@ services:
       retries: 5
 
   app:
-    image: hieuphi/exe:v3
+    image: hieuphi/exe:lastest
     container_name: springboot_container
     environment:
       MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
@@ -68,7 +68,7 @@ services:
       - backend
 
   flask_app:
-    image: hieuphi/flaskapp:v2
+    image: hieuphi/flaskapp:lastest
     container_name: flask_container
     environment:
       LLAMDA_API_KEY1: ${LLAMDA_API_KEY1}

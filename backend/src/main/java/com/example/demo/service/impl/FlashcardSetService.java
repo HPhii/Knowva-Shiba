@@ -191,9 +191,11 @@ public class FlashcardSetService implements IFlashcardSetService {
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
-        checkAccessPermission(flashcardSet, currentUser, null, Permission.EDIT);
+        if (!flashcardSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can delete this FlashcardSet");
+        }
 
-        flashcardSetRepository.delete(flashcardSet); // Cascade will automatically delete flashcards and access controls
+        flashcardSetRepository.delete(flashcardSet);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
     }
 
@@ -254,23 +256,23 @@ public class FlashcardSetService implements IFlashcardSetService {
                 .build();
 
         flashcardAccessControlRepository.save(accessControl);
-
-        String subject = "Bạn đã được mời vào FlashcardSet";
-        String templateName = "invite-flashcard-set";
-        Map<String, Object> contextVariables = new HashMap<>();
-        contextVariables.put("userName", invitedUser.getFullName());
-        contextVariables.put("flashcardSetTitle", flashcardSet.getTitle());
-        contextVariables.put("permission", permission.name());
-
-        EmailDetails emailDetails = new EmailDetails();
-        emailDetails.setReceiver(invitedUser.getAccount());
-        emailDetails.setSubject(subject);
-
-        try {
-            emailService.sendMail(emailDetails, templateName, contextVariables);
-        } catch (MessagingException e) {
-            System.out.println("Lỗi gửi email cho user: " + invitedUser.getId());
-        }
+//
+//        String subject = "Bạn đã được mời vào FlashcardSet";
+//        String templateName = "invite-flashcard-set";
+//        Map<String, Object> contextVariables = new HashMap<>();
+//        contextVariables.put("userName", invitedUser.getFullName());
+//        contextVariables.put("flashcardSetTitle", flashcardSet.getTitle());
+//        contextVariables.put("permission", permission.name());
+//
+//        EmailDetails emailDetails = new EmailDetails();
+//        emailDetails.setReceiver(invitedUser.getAccount());
+//        emailDetails.setSubject(subject);
+//
+//        try {
+//            emailService.sendMail(emailDetails, templateName, contextVariables);
+//        } catch (MessagingException e) {
+//            System.out.println("Lỗi gửi email cho user: " + invitedUser.getId());
+//        }
     }
 
     private void checkAccessPermission(FlashcardSet flashcardSet, User currentUser, String token, Permission requiredPermission) {
@@ -289,6 +291,18 @@ public class FlashcardSetService implements IFlashcardSetService {
                 throw new SecurityException("Edit not allowed for hidden FlashcardSet");
             return;
         }
+
+//        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
+//            if (token == null || !token.equals(flashcardSet.getAccessToken()))
+//                throw new SecurityException("Invalid token for hidden FlashcardSet");
+//            if (requiredPermission == Permission.EDIT) {
+//                Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
+//                        .findByFlashcardSetAndInvitedUser(flashcardSet, currentUser);
+//                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT)
+//                    throw new SecurityException("You do not have edit permission for this hidden FlashcardSet");
+//            }
+//            return;
+//        }
 
         if (flashcardSet.getVisibility() == Visibility.PRIVATE) {
             Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
