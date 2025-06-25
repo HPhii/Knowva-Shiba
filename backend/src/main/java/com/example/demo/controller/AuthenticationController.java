@@ -5,8 +5,6 @@ import com.example.demo.model.entity.Account;
 import com.example.demo.model.io.request.RegisterRequest;
 import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.request.LoginRequest;
-import com.example.demo.repository.AccountRepository;
-import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IAuthenticationService;
 import com.example.demo.service.intface.ITokenService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -28,11 +26,9 @@ import java.util.Map;
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
 public class AuthenticationController {
-    private final IAccountService accountService;
     private final IAuthenticationService authenticationService;
     private final Filter filter;
     private final ITokenService tokenService;
-    private final AccountRepository accountRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
     @PostMapping("/register")

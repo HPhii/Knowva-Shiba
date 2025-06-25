@@ -4,20 +4,28 @@ import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.FlashcardSetManualMapper;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.Flashcard;
+import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
+import com.example.demo.model.enums.Permission;
+import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.flashcard.*;
+import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
+import com.example.demo.repository.FlashcardAccessControlRepository;
 import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.FlashcardSetRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.IEmailService;
 import com.example.demo.service.template.FlashcardSetAIService;
 import com.example.demo.service.template.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
 import com.example.demo.utils.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,18 +33,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardSetRepository flashcardSetRepository;
-    private final FlashcardProgressRepository flashcardProgressRepository;
     private final FlaskAIService flaskAIService;
     private final IAccountService accountService;
     private final FlashcardSetManualMapper flashcardSetMapper;
     private final FlashcardSetAIService flashcardSetAIService;
+    private final FlashcardAccessControlRepository flashcardAccessControlRepository;
+    private final UserRepository userRepository;
+    private final IEmailService emailService;
 
     @Override
     @Cacheable(value = "allFlashcardSets")
@@ -97,6 +106,13 @@ public class FlashcardSetService implements IFlashcardSetService {
                 .updatedAt(LocalDateTime.now())
                 .flashcards(new ArrayList<>())
                 .build();
+
+        if (request.getVisibility() == Visibility.HIDDEN) {
+            flashcardSet.setAccessToken(UUID.randomUUID().toString());
+        } else {
+            flashcardSet.setAccessToken(null);
+        }
+
         for (SaveFlashcardRequest fReq : request.getFlashcards()) {
             Flashcard flashcard = Flashcard.builder()
                     .flashcardSet(flashcardSet)
@@ -107,6 +123,7 @@ public class FlashcardSetService implements IFlashcardSetService {
                     .build();
             flashcardSet.getFlashcards().add(flashcard);
         }
+
         flashcardSet = flashcardSetRepository.save(flashcardSet);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
     }
@@ -114,18 +131,25 @@ public class FlashcardSetService implements IFlashcardSetService {
     @Override
     @CacheEvict(value = "flashcardSet", key = "#flashcardSetId")
     public FlashcardSetResponse updateFlashcardSet(Long flashcardSetId, UpdateFlashcardSetRequest request) {
-        User user = accountService.getCurrentAccount().getUser();
+        User currentUser = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
-        if (!flashcardSet.getOwner().getId().equals(user.getId())) {
-            throw new SecurityException("You are not authorized to update this FlashcardSet");
-        }
+
+        checkAccessPermission(flashcardSet, currentUser, null, Permission.EDIT);
+
         flashcardSet.setTitle(request.getTitle());
         flashcardSet.setSourceType(request.getSourceType());
         flashcardSet.setLanguage(request.getLanguage());
         flashcardSet.setCardType(request.getCardType());
         flashcardSet.setVisibility(request.getVisibility());
         flashcardSet.setUpdatedAt(LocalDateTime.now());
+
+        if (request.getVisibility() == Visibility.HIDDEN) {
+            flashcardSet.setAccessToken(UUID.randomUUID().toString());
+        } else {
+            flashcardSet.setAccessToken(null);
+        }
+
         List<Flashcard> updatedFlashcards = new ArrayList<>();
         for (UpdateFlashcardRequest fReq : request.getFlashcards()) {
             Flashcard flashcard;
@@ -151,17 +175,26 @@ public class FlashcardSetService implements IFlashcardSetService {
 
     @Override
     @Cacheable(value = "flashcardSet", key = "#id")
-    public FlashcardSetResponse getFlashcardSetById(Long id) {
+    public FlashcardSetResponse getFlashcardSetById(Long id, String token) {
+        User currentUser = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        checkAccessPermission(flashcardSet, currentUser, token, Permission.VIEW);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
     }
 
     @Override
     @CacheEvict(value = "flashcardSet", key = "#id")
     public FlashcardSetResponse deleteFlashcardSetById(Long id) {
+        User currentUser = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        if (!flashcardSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can delete this FlashcardSet");
+        }
+
         flashcardSetRepository.delete(flashcardSet);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
     }
@@ -198,4 +231,88 @@ public class FlashcardSetService implements IFlashcardSetService {
         String aiResponse = flaskAIService.callFlaskAIForQuizGeneration(flashcardSet, language, questionType, maxQuestions);
         return Parser.parseQuiz(aiResponse);
     }
+
+    @Override
+    public void inviteUserToFlashcardSet(Long flashcardSetId, Long invitedUserId, Permission permission) {
+        User owner = accountService.getCurrentAccount().getUser();
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        // check if the current user is the owner of the flashcard set
+        if (!flashcardSet.getOwner().getId().equals(owner.getId())) {
+            throw new SecurityException("You are not authorized to invite users to this FlashcardSet");
+        }
+
+        // check if the invited user exists
+        User invitedUser = userRepository.findById(invitedUserId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        // create or update the access control entry
+        FlashcardAccessControl accessControl = FlashcardAccessControl.builder()
+                .flashcardSet(flashcardSet)
+                .invitedUser(invitedUser)
+                .permission(permission)
+                .invitedAt(LocalDateTime.now())
+                .build();
+
+        flashcardAccessControlRepository.save(accessControl);
+//
+//        String subject = "Bạn đã được mời vào FlashcardSet";
+//        String templateName = "invite-flashcard-set";
+//        Map<String, Object> contextVariables = new HashMap<>();
+//        contextVariables.put("userName", invitedUser.getFullName());
+//        contextVariables.put("flashcardSetTitle", flashcardSet.getTitle());
+//        contextVariables.put("permission", permission.name());
+//
+//        EmailDetails emailDetails = new EmailDetails();
+//        emailDetails.setReceiver(invitedUser.getAccount());
+//        emailDetails.setSubject(subject);
+//
+//        try {
+//            emailService.sendMail(emailDetails, templateName, contextVariables);
+//        } catch (MessagingException e) {
+//            System.out.println("Lỗi gửi email cho user: " + invitedUser.getId());
+//        }
+    }
+
+    private void checkAccessPermission(FlashcardSet flashcardSet, User currentUser, String token, Permission requiredPermission) {
+        if (flashcardSet.getOwner().getId().equals(currentUser.getId())) return;
+
+        if (flashcardSet.getVisibility() == Visibility.PUBLIC) {
+            if (requiredPermission == Permission.EDIT)
+                throw new SecurityException("You do not have edit permission for this FlashcardSet");
+            return;
+        }
+
+        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
+            if (token == null || !token.equals(flashcardSet.getAccessToken()))
+                throw new SecurityException("Invalid token for hidden FlashcardSet");
+            if (requiredPermission == Permission.EDIT)
+                throw new SecurityException("Edit not allowed for hidden FlashcardSet");
+            return;
+        }
+
+//        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
+//            if (token == null || !token.equals(flashcardSet.getAccessToken()))
+//                throw new SecurityException("Invalid token for hidden FlashcardSet");
+//            if (requiredPermission == Permission.EDIT) {
+//                Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
+//                        .findByFlashcardSetAndInvitedUser(flashcardSet, currentUser);
+//                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT)
+//                    throw new SecurityException("You do not have edit permission for this hidden FlashcardSet");
+//            }
+//            return;
+//        }
+
+        if (flashcardSet.getVisibility() == Visibility.PRIVATE) {
+            Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
+                    .findByFlashcardSetAndInvitedUser(flashcardSet, currentUser);
+            if (access.isEmpty() || access.get().getPermission().ordinal() < requiredPermission.ordinal())
+                throw new SecurityException("You do not have sufficient permission");
+            return;
+        }
+
+        throw new SecurityException("Access denied");
+    }
+
 }

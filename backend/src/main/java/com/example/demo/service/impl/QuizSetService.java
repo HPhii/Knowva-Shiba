@@ -3,20 +3,22 @@ package com.example.demo.service.impl;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
 import com.example.demo.model.entity.User;
+import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
+import com.example.demo.model.enums.Permission;
+import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.quiz.*;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
+import com.example.demo.repository.QuizAccessControlRepository;
 import com.example.demo.repository.QuizSetRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -25,31 +27,43 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class QuizSetService implements IQuizSetService {
     private final QuizSetRepository quizSetRepository;
-    @Getter
     private final IAccountService accountService;
     private final QuizSetManualMapper quizSetMapper;
     private final QuizSetAIService quizSetAIService;
-    private static final Logger log = LoggerFactory.getLogger(QuizSetService.class);
+    private final QuizAccessControlRepository quizAccessControlRepository;
+    private final UserRepository userRepository;
 
     @Override
     @CacheEvict(value = "quizSet", key = "#id")
     public QuizSetResponse deleteQuizSetById(Long id) {
+        User currentUser = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = quizSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
+
+        if (!quizSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can delete this QuizSet");
+        }
+
         quizSetRepository.delete(quizSet);
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
     @Override
     @Cacheable(value = "quizSet", key = "#id")
-    public QuizSetResponse getQuizSetById(Long id) {
+    public QuizSetResponse getQuizSetById(Long id, String token) {
+        User currentUser = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = quizSetRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found with id: " + id));
+
+        checkAccessPermission(quizSet, currentUser, token, Permission.VIEW);
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
@@ -63,8 +77,19 @@ public class QuizSetService implements IQuizSetService {
     @Override
     @Cacheable(value = "allQuizSets")
     public List<QuizSetResponse> getAllQuizSets() {
-        List<QuizSet> quizSets = quizSetRepository.findAll();
-        return quizSetMapper.mapToQuizSetResponseList(quizSets);
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<QuizSet> allQuizSets = quizSetRepository.findAll();
+        List<QuizSet> accessibleQuizSets = allQuizSets.stream()
+                .filter(quizSet -> {
+                    try {
+                        checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
+                        return true;
+                    } catch (SecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+        return quizSetMapper.mapToQuizSetResponseList(accessibleQuizSets);
     }
 
     @Override
@@ -121,6 +146,12 @@ public class QuizSetService implements IQuizSetService {
                 .questions(new ArrayList<>())
                 .build();
 
+        if (request.getVisibility() == Visibility.HIDDEN) {
+            quizSet.setAccessToken(UUID.randomUUID().toString());
+        } else {
+            quizSet.setAccessToken(null);
+        }
+
         for (SaveQuizQuestionRequest qReq : request.getQuestions()) {
             QuizQuestion question = QuizQuestion.builder()
                     .quizSet(quizSet)
@@ -149,17 +180,25 @@ public class QuizSetService implements IQuizSetService {
         }
 
         quizSet = quizSetRepository.save(quizSet);
-
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
     @Override
     @CacheEvict(value = "quizSet", key = "#quizSetId")
     public QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request) {
-        User user = accountService.getCurrentAccount().getUser();
-        QuizSet quizSet = findAndValidateQuizSetOwner(quizSetId, user);
+        User currentUser = accountService.getCurrentAccount().getUser();
+        QuizSet quizSet = quizSetRepository.findById(quizSetId)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
+
+        checkAccessPermission(quizSet, currentUser, null, Permission.EDIT);
 
         updateQuizSetInfo(quizSet, request);
+
+        if (request.getVisibility() == Visibility.HIDDEN) {
+            quizSet.setAccessToken(UUID.randomUUID().toString());
+        } else {
+            quizSet.setAccessToken(null);
+        }
 
         List<QuizQuestion> updatedQuestions = updateQuestions(quizSet, request.getQuestions());
         quizSet.setQuestions(updatedQuestions);
@@ -168,14 +207,65 @@ public class QuizSetService implements IQuizSetService {
         return quizSetMapper.mapToQuizSetResponse(quizSet);
     }
 
-    private QuizSet findAndValidateQuizSetOwner(Long quizSetId, User user) {
+    @Override
+    public void inviteUserToQuizSet(Long quizSetId, Long invitedUserId, Permission permission) {
+        User owner = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = quizSetRepository.findById(quizSetId)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
 
-        if (!quizSet.getOwner().getId().equals(user.getId())) {
-            throw new SecurityException("You are not authorized to update this QuizSet");
+        if (!quizSet.getOwner().getId().equals(owner.getId())) {
+            throw new SecurityException("You are not authorized to invite users to this QuizSet");
         }
-        return quizSet;
+
+        User invitedUser = userRepository.findById(invitedUserId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        QuizAccessControl accessControl = QuizAccessControl.builder()
+                .quizSet(quizSet)
+                .invitedUser(invitedUser)
+                .permission(permission)
+                .invitedAt(LocalDateTime.now())
+                .build();
+
+        quizAccessControlRepository.save(accessControl);
+    }
+
+    private void checkAccessPermission(QuizSet quizSet, User currentUser, String token, Permission requiredPermission) {
+        if (quizSet.getOwner().getId().equals(currentUser.getId())) {
+            return;
+        }
+
+        if (quizSet.getVisibility() == Visibility.PUBLIC) {
+            if (requiredPermission == Permission.EDIT) {
+                throw new SecurityException("You do not have edit permission for this QuizSet");
+            }
+            return;
+        }
+
+        if (quizSet.getVisibility() == Visibility.HIDDEN) {
+            if (token == null || !token.equals(quizSet.getAccessToken())) {
+                throw new SecurityException("Invalid token for hidden QuizSet");
+            }
+            if (requiredPermission == Permission.EDIT) {
+                Optional<QuizAccessControl> access = quizAccessControlRepository
+                        .findByQuizSetAndInvitedUser(quizSet, currentUser);
+                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT) {
+                    throw new SecurityException("You do not have edit permission for this hidden QuizSet");
+                }
+            }
+            return;
+        }
+
+        if (quizSet.getVisibility() == Visibility.PRIVATE) {
+            Optional<QuizAccessControl> access = quizAccessControlRepository
+                    .findByQuizSetAndInvitedUser(quizSet, currentUser);
+            if (access.isEmpty() || access.get().getPermission().ordinal() < requiredPermission.ordinal()) {
+                throw new SecurityException("You do not have sufficient permission");
+            }
+            return;
+        }
+
+        throw new SecurityException("Access denied");
     }
 
     private void updateQuizSetInfo(QuizSet quizSet, UpdateQuizSetRequest request) {
@@ -193,10 +283,8 @@ public class QuizSetService implements IQuizSetService {
         for (UpdateQuizQuestionRequest qReq : questionRequests) {
             QuizQuestion question = findOrCreateQuestion(quizSet, qReq);
             updateQuestionFields(question, qReq);
-
             List<QuizAnswer> updatedAnswers = updateAnswers(question, qReq.getAnswers());
             question.setAnswers(updatedAnswers);
-
             updatedQuestions.add(question);
         }
         return updatedQuestions;

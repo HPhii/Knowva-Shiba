@@ -21,4 +21,5 @@ public class FlashcardSetResponse {
     private CardType cardType;
     private Visibility visibility;
     private List<FlashcardResponse> flashcards;
+    private String accessToken;
 }

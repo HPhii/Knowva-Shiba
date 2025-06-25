@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.io.request.InviteUserRequest;
 import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SubmitExamModeRequest;
@@ -49,8 +50,10 @@ public class FlashcardSetController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FlashcardSetResponse> getFlashcardSetById(@PathVariable Long id) {
-        FlashcardSetResponse response = flashcardSetService.getFlashcardSetById(id);
+    public ResponseEntity<FlashcardSetResponse> getFlashcardSetById(
+            @PathVariable Long id,
+            @RequestParam(required = false) String token) {
+        FlashcardSetResponse response = flashcardSetService.getFlashcardSetById(id, token);
         return ResponseEntity.ok(response);
     }
 
@@ -88,5 +91,13 @@ public class FlashcardSetController {
             @RequestParam(defaultValue = "5") int maxQuestions) {
         SimplifiedQuizSetResponse response = flashcardSetService.generateQuizMode(flashcardSetId, language, questionType, maxQuestions);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<String> inviteUserToFlashcardSet(
+            @PathVariable Long id,
+            @RequestBody InviteUserRequest request) {
+        flashcardSetService.inviteUserToFlashcardSet(id, request.getUserId(), request.getPermission());
+        return ResponseEntity.ok("User invited successfully");
     }
 }
