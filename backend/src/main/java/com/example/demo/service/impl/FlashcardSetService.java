@@ -2,11 +2,13 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.FlashcardSetManualMapper;
+import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.enums.Permission;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.flashcard.*;
 import com.example.demo.model.io.response.object.EmailDetails;
@@ -63,9 +65,20 @@ public class FlashcardSetService implements IFlashcardSetService {
 
     @Override
     public SimplifiedFlashcardSetResponse generateFlashcardSet(CreateFlashcardSetRequest request, List<MultipartFile> files, String text) {
-        User owner = accountService.getCurrentAccount().getUser();
+        Account ownerAccount = accountService.getCurrentAccount();
 
-        Object input = text != null && !text.isBlank() ? text : files;
+        if (ownerAccount.getRole() == Role.REGULAR && (files != null && !files.isEmpty())) {
+            throw new SecurityException("User with REGULAR role can only use text input, not file uploads.");
+        }
+
+        Object input;
+        if (text != null && !text.isBlank()) {
+            input = text;
+        } else if (files != null && !files.isEmpty()) {
+            input = files;
+        } else {
+            throw new IllegalArgumentException("Either text or files must be provided.");
+        }
 
         List<Flashcard> flashcards = flashcardSetAIService.generateFromAI(
                 input,
@@ -75,7 +88,7 @@ public class FlashcardSetService implements IFlashcardSetService {
         );
 
         FlashcardSet tempFlashcardSet = FlashcardSet.builder()
-                .owner(owner)
+                .owner(ownerAccount.getUser())
                 .title(request.getTitle())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())

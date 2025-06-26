@@ -2,12 +2,14 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
+import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
 import com.example.demo.model.enums.Permission;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.quiz.*;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
@@ -94,9 +96,20 @@ public class QuizSetService implements IQuizSetService {
 
     @Override
     public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, List<MultipartFile> files, String text) {
-        User owner = accountService.getCurrentAccount().getUser();
+        Account ownerAccount = accountService.getCurrentAccount();
 
-        Object input = text != null && !text.isBlank() ? text : files;
+        if (ownerAccount.getRole() == Role.REGULAR && (files != null && !files.isEmpty())) {
+            throw new SecurityException("User with REGULAR role can only use text input, not file uploads.");
+        }
+
+        Object input;
+        if (text != null && !text.isBlank()) {
+            input = text;
+        } else if (files != null && !files.isEmpty()) {
+            input = files;
+        } else {
+            throw new IllegalArgumentException("Either text or files must be provided.");
+        }
 
         List<QuizQuestion> questions = quizSetAIService.generateFromAI(
                 input,
@@ -106,7 +119,7 @@ public class QuizSetService implements IQuizSetService {
         );
 
         QuizSet tempQuizSet = QuizSet.builder()
-                .owner(owner)
+                .owner(ownerAccount.getUser())
                 .title(request.getTitle())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
