@@ -25,6 +25,7 @@ import com.example.demo.service.template.FlashcardSetAIService;
 import com.example.demo.service.template.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
+import com.example.demo.utils.InputValidationUtils;
 import com.example.demo.utils.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.mail.MessagingException;
@@ -66,19 +67,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     @Override
     public SimplifiedFlashcardSetResponse generateFlashcardSet(CreateFlashcardSetRequest request, List<MultipartFile> files, String text) {
         Account ownerAccount = accountService.getCurrentAccount();
-
-        if (ownerAccount.getRole() == Role.REGULAR && (files != null && !files.isEmpty())) {
-            throw new SecurityException("User with REGULAR role can only use text input, not file uploads.");
-        }
-
-        Object input;
-        if (text != null && !text.isBlank()) {
-            input = text;
-        } else if (files != null && !files.isEmpty()) {
-            input = files;
-        } else {
-            throw new IllegalArgumentException("Either text or files must be provided.");
-        }
+        Object input = InputValidationUtils.validateInput(ownerAccount, text, files, request.getMaxFlashcards());
 
         List<Flashcard> flashcards = flashcardSetAIService.generateFromAI(
                 input,

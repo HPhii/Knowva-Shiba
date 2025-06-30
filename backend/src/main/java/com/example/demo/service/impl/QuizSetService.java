@@ -20,6 +20,7 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
+import com.example.demo.utils.InputValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -97,19 +98,7 @@ public class QuizSetService implements IQuizSetService {
     @Override
     public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, List<MultipartFile> files, String text) {
         Account ownerAccount = accountService.getCurrentAccount();
-
-        if (ownerAccount.getRole() == Role.REGULAR && (files != null && !files.isEmpty())) {
-            throw new SecurityException("User with REGULAR role can only use text input, not file uploads.");
-        }
-
-        Object input;
-        if (text != null && !text.isBlank()) {
-            input = text;
-        } else if (files != null && !files.isEmpty()) {
-            input = files;
-        } else {
-            throw new IllegalArgumentException("Either text or files must be provided.");
-        }
+        Object input = InputValidationUtils.validateInput(ownerAccount, text, files, request.getMaxQuestions());
 
         List<QuizQuestion> questions = quizSetAIService.generateFromAI(
                 input,
