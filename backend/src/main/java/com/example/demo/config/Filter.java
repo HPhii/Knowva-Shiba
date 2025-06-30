@@ -74,6 +74,13 @@ public class Filter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String uri = request.getRequestURI();
+
+        // Bỏ qua kiểm tra token cho các yêu cầu WebSocket
+        if (uri.startsWith("/ws")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         boolean isPublicAPI = checkIsPublicAPI(uri);
 
         // Nếu là API công khai, không cần xác thực.

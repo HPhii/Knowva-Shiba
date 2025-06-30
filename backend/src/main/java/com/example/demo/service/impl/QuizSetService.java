@@ -2,11 +2,13 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
+import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
+import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.quiz.*;
@@ -15,9 +17,11 @@ import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizAccessControlRepository;
 import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.INotificationService;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
+import com.example.demo.utils.InputValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,6 +44,7 @@ public class QuizSetService implements IQuizSetService {
     private final QuizSetAIService quizSetAIService;
     private final QuizAccessControlRepository quizAccessControlRepository;
     private final UserRepository userRepository;
+    private final INotificationService notificationService;
 
     @Override
     @CacheEvict(value = "quizSet", key = "#id")
@@ -94,9 +99,8 @@ public class QuizSetService implements IQuizSetService {
 
     @Override
     public SimplifiedQuizSetResponse generateQuizSet(CreateQuizSetRequest request, List<MultipartFile> files, String text) {
-        User owner = accountService.getCurrentAccount().getUser();
-
-        Object input = text != null && !text.isBlank() ? text : files;
+        Account ownerAccount = accountService.getCurrentAccount();
+        Object input = InputValidationUtils.validateInput(ownerAccount, text, files, request.getMaxQuestions());
 
         List<QuizQuestion> questions = quizSetAIService.generateFromAI(
                 input,
@@ -106,7 +110,7 @@ public class QuizSetService implements IQuizSetService {
         );
 
         QuizSet tempQuizSet = QuizSet.builder()
-                .owner(owner)
+                .owner(ownerAccount.getUser())
                 .title(request.getTitle())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
@@ -226,6 +230,10 @@ public class QuizSetService implements IQuizSetService {
                 .permission(permission)
                 .invitedAt(LocalDateTime.now())
                 .build();
+
+        String message = owner.getFullName() + " đã mời bạn vào set " + quizSet.getTitle() +
+                " để cùng học tập, ôn luyện và chinh phục kiến thức!";
+        notificationService.createNotification(invitedUserId, NotificationType.QUIZ_INVITE, message, quizSetId);
 
         quizAccessControlRepository.save(accessControl);
     }
