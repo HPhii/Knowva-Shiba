@@ -8,8 +8,8 @@ import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
+import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.enums.Permission;
-import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.request.quiz.*;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
@@ -17,6 +17,7 @@ import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizAccessControlRepository;
 import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.INotificationService;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
@@ -43,6 +44,7 @@ public class QuizSetService implements IQuizSetService {
     private final QuizSetAIService quizSetAIService;
     private final QuizAccessControlRepository quizAccessControlRepository;
     private final UserRepository userRepository;
+    private final INotificationService notificationService;
 
     @Override
     @CacheEvict(value = "quizSet", key = "#id")
@@ -228,6 +230,10 @@ public class QuizSetService implements IQuizSetService {
                 .permission(permission)
                 .invitedAt(LocalDateTime.now())
                 .build();
+
+        String message = owner.getFullName() + " đã mời bạn vào set " + quizSet.getTitle() +
+                " để cùng học tập, ôn luyện và chinh phục kiến thức!";
+        notificationService.createNotification(invitedUserId, NotificationType.QUIZ_INVITE, message, quizSetId);
 
         quizAccessControlRepository.save(accessControl);
     }

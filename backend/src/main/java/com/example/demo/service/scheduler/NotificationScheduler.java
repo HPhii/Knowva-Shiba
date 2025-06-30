@@ -2,10 +2,12 @@ package com.example.demo.service.scheduler;
 
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.FlashcardProgress;
+import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.impl.EmailService;
+import com.example.demo.service.intface.INotificationService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +26,7 @@ public class NotificationScheduler {
     private final FlashcardProgressRepository flashcardProgressRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final INotificationService notificationService;
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendDailyFlashcardNotifications() {
@@ -38,7 +41,12 @@ public class NotificationScheduler {
         for (Map.Entry<User, List<FlashcardProgress>> entry : userFlashcardsMap.entrySet()) {
             User user = entry.getKey();
             List<FlashcardProgress> flashcards = entry.getValue();
-            sendNotificationEmail(user, flashcards);
+//            sendNotificationEmail(user, flashcards);
+
+            // Tạo notification
+            String message = "Bạn có " + flashcards.size() +
+                    " flashcard đến hạn ôn tập hôm nay. Hãy bắt đầu để không quên kiến thức nhé!";
+            notificationService.createNotification(user.getId(), NotificationType.REMINDER, message, null);
         }
     }
 

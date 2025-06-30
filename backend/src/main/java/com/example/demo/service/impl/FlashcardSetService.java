@@ -7,6 +7,7 @@ import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
+import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Visibility;
@@ -21,6 +22,7 @@ import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IEmailService;
+import com.example.demo.service.intface.INotificationService;
 import com.example.demo.service.template.FlashcardSetAIService;
 import com.example.demo.service.template.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
@@ -48,7 +50,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardSetAIService flashcardSetAIService;
     private final FlashcardAccessControlRepository flashcardAccessControlRepository;
     private final UserRepository userRepository;
-    private final IEmailService emailService;
+    private final INotificationService notificationService;
 
     @Override
     @Cacheable(value = "allFlashcardSets")
@@ -256,6 +258,10 @@ public class FlashcardSetService implements IFlashcardSetService {
                 .permission(permission)
                 .invitedAt(LocalDateTime.now())
                 .build();
+
+        String message = owner.getFullName() + " đã mời bạn vào set " + flashcardSet.getTitle() +
+                " để cùng học tập, ôn luyện và chinh phục kiến thức!";
+        notificationService.createNotification(invitedUserId, NotificationType.FLASHCARD_INVITE, message, flashcardSetId);
 
         flashcardAccessControlRepository.save(accessControl);
 //

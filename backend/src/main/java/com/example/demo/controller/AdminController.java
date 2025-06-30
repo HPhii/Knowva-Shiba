@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.enums.NotificationType;
+import com.example.demo.service.intface.INotificationService;
 import com.example.demo.service.intface.ITokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
     private final RedisTemplate<String, String> redisTemplate;
     private final ITokenService tokenService;
+    private final INotificationService notificationService;
 
     @PostMapping("/force-logout/{userId}")
     public ResponseEntity<String> forceLogout(@PathVariable Long userId) {
@@ -26,5 +29,14 @@ public class AdminController {
             return ResponseEntity.ok("User logged out successfully.");
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No active session for this user.");
+    }
+
+    @PostMapping("/send-system-notification")
+    public ResponseEntity<String> sendSystemNotification(
+            @RequestParam NotificationType type,
+            @RequestParam String message,
+            @RequestParam(required = false) Long setId) {
+        notificationService.createSystemNotification(type, message, setId);
+        return ResponseEntity.ok("System notification sent successfully.");
     }
 }
