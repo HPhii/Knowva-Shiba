@@ -1,5 +1,6 @@
 package com.example.demo.model.io.request.quiz;
 
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.QuestionType;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
@@ -33,6 +34,8 @@ public class CreateQuizSetRequest {
 
     @NotNull(message = "Visibility is required")
     private Visibility visibility;
+    
+    private Category category;
 
     private Integer timeLimit;
 }

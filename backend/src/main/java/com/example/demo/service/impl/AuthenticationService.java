@@ -160,9 +160,13 @@ public class AuthenticationService implements IAuthenticationService {
         if (account == null) {
             String name = (String) idToken.getPayload().get("name");
             String username = generateUniqueUsername(name);
+            
+            // Get profile picture URL from Google account
+            String pictureUrl = (String) idToken.getPayload().get("picture");
 
             User newUser = new User();
             newUser.setFullName(name);
+            newUser.setAvatarUrl(pictureUrl);
             userRepository.save(newUser);
 
             account = Account.builder()

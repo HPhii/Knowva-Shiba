@@ -7,10 +7,7 @@ import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.Flashcard;
 import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
-import com.example.demo.model.enums.NotificationType;
-import com.example.demo.model.enums.Permission;
-import com.example.demo.model.enums.Role;
-import com.example.demo.model.enums.Visibility;
+import com.example.demo.model.enums.*;
 import com.example.demo.model.io.request.flashcard.*;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
@@ -39,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -55,15 +53,39 @@ public class FlashcardSetService implements IFlashcardSetService {
     @Override
     @Cacheable(value = "allFlashcardSets")
     public List<FlashcardSetResponse> getAllFlashcardSets() {
-        return flashcardSetMapper.mapToFlashcardSetResponseList(flashcardSetRepository.findAll());
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<FlashcardSet> allFlashcardSets = flashcardSetRepository.findAll();
+        return getFlashcardSetResponses(currentUser, allFlashcardSets);
+    }
+
+    private List<FlashcardSetResponse> getFlashcardSetResponses(User currentUser, List<FlashcardSet> allFlashcardSets) {
+        List<FlashcardSet> accessibleFlashcardSets = allFlashcardSets.stream()
+                .filter(flashcardSet -> {
+                    try {
+                        checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
+                        return true;
+                    } catch (SecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+        return flashcardSetMapper.mapToFlashcardSetResponseList(accessibleFlashcardSets);
     }
 
     @Override
     @Cacheable(value = "flashcardSetsOfUser", key = "#userId")
     public List<FlashcardSetResponse> getFlashcardSetsOfUser(Long userId) {
-        User user = accountService.getCurrentAccount().getUser();
-        List<FlashcardSet> flashcardSets = flashcardSetRepository.findAllByOwner_Id(user.getId());
-        return flashcardSetMapper.mapToFlashcardSetResponseList(flashcardSets);
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<FlashcardSet> flashcardSets = flashcardSetRepository.findAllByOwner_Id(userId);
+        return getFlashcardSetResponses(currentUser, flashcardSets);
+    }
+    
+    @Override
+    @Cacheable(value = "flashcardSetsByCategory", key = "#category")
+    public List<FlashcardSetResponse> getFlashcardSetsByCategory(Category category) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<FlashcardSet> flashcardSets = flashcardSetRepository.findAllByCategory(category);
+        return getFlashcardSetResponses(currentUser, flashcardSets);
     }
 
     @Override
@@ -85,6 +107,7 @@ public class FlashcardSetService implements IFlashcardSetService {
                 .language(request.getLanguage())
                 .cardType(request.getCardType())
                 .visibility(request.getVisibility())
+                .category(request.getCategory())
                 .flashcards(flashcards)
                 .build();
 
@@ -96,7 +119,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     @Override
-    @CacheEvict(value = {"flashcardSet", "flashcardSetsOfUser", "allFlashcardSets"}, allEntries = true)
+    @CacheEvict(value = {"flashcardSet", "flashcardSetsOfUser", "allFlashcardSets", "flashcardSetsByCategory"}, allEntries = true)
     public FlashcardSetResponse saveFlashcardSet(SaveFlashcardSetRequest request) {
         User owner = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = FlashcardSet.builder()
@@ -106,6 +129,7 @@ public class FlashcardSetService implements IFlashcardSetService {
                 .language(request.getLanguage())
                 .cardType(request.getCardType())
                 .visibility(request.getVisibility())
+                .category(request.getCategory())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .flashcards(new ArrayList<>())
@@ -133,19 +157,20 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     @Override
-    @CacheEvict(value = "flashcardSet", key = "#flashcardSetId")
-    public FlashcardSetResponse updateFlashcardSet(Long flashcardSetId, UpdateFlashcardSetRequest request) {
+    @CacheEvict(value = {"flashcardSet", "flashcardSetsByCategory"}, key = "#flashcardSetId")
+    public FlashcardSetResponse updateFlashcardSet(Long flashcardSetId, UpdateFlashcardSetRequest request, String token) {
         User currentUser = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
-        checkAccessPermission(flashcardSet, currentUser, null, Permission.EDIT);
+        checkAccessPermission(flashcardSet, currentUser, token, Permission.EDIT);
 
         flashcardSet.setTitle(request.getTitle());
         flashcardSet.setSourceType(request.getSourceType());
         flashcardSet.setLanguage(request.getLanguage());
         flashcardSet.setCardType(request.getCardType());
         flashcardSet.setVisibility(request.getVisibility());
+        flashcardSet.setCategory(request.getCategory());
         flashcardSet.setUpdatedAt(LocalDateTime.now());
 
         if (request.getVisibility() == Visibility.HIDDEN) {
@@ -292,25 +317,25 @@ public class FlashcardSetService implements IFlashcardSetService {
             return;
         }
 
-        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
-            if (token == null || !token.equals(flashcardSet.getAccessToken()))
-                throw new SecurityException("Invalid token for hidden FlashcardSet");
-            if (requiredPermission == Permission.EDIT)
-                throw new SecurityException("Edit not allowed for hidden FlashcardSet");
-            return;
-        }
-
 //        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
 //            if (token == null || !token.equals(flashcardSet.getAccessToken()))
 //                throw new SecurityException("Invalid token for hidden FlashcardSet");
-//            if (requiredPermission == Permission.EDIT) {
-//                Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
-//                        .findByFlashcardSetAndInvitedUser(flashcardSet, currentUser);
-//                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT)
-//                    throw new SecurityException("You do not have edit permission for this hidden FlashcardSet");
-//            }
+//            if (requiredPermission == Permission.EDIT)
+//                throw new SecurityException("Edit not allowed for hidden FlashcardSet");
 //            return;
 //        }
+
+        if (flashcardSet.getVisibility() == Visibility.HIDDEN) {
+            if (token == null || !token.equals(flashcardSet.getAccessToken()))
+                throw new SecurityException("Invalid token for hidden FlashcardSet");
+            if (requiredPermission == Permission.EDIT) {
+                Optional<FlashcardAccessControl> access = flashcardAccessControlRepository
+                        .findByFlashcardSetAndInvitedUser(flashcardSet, currentUser);
+                if (access.isEmpty() || access.get().getPermission() != Permission.EDIT)
+                    throw new SecurityException("You do not have edit permission for this hidden FlashcardSet");
+            }
+            return;
+        }
 
         if (flashcardSet.getVisibility() == Visibility.PRIVATE) {
             Optional<FlashcardAccessControl> access = flashcardAccessControlRepository

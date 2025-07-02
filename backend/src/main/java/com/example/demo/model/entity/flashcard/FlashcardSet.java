@@ -1,6 +1,7 @@
 package com.example.demo.model.entity.flashcard;
 
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.enums.CardType;
@@ -45,6 +46,9 @@ public class FlashcardSet {
 
     @Enumerated(EnumType.STRING)
     private Visibility visibility;
+    
+    @Enumerated(EnumType.STRING)
+    private Category category;
 
     private LocalDateTime createdAt;
 
