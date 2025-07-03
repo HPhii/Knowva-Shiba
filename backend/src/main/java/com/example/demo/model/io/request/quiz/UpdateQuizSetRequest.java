@@ -1,5 +1,6 @@
 package com.example.demo.model.io.request.quiz;
 
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.QuestionType;
 import com.example.demo.model.enums.Visibility;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ public class UpdateQuizSetRequest {
     private QuestionType questionType;
     private Integer maxQuestions;
     private Visibility visibility;
+    private Category category;
     private Integer timeLimit;
     private List<UpdateQuizQuestionRequest> questions;
 }

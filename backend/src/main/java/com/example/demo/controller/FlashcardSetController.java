@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.io.request.InviteUserRequest;
 import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
@@ -9,6 +11,7 @@ import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackRespo
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
+import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFlashcardSetService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ import java.util.List;
 @SecurityRequirement(name = "api")
 public class FlashcardSetController {
     private final IFlashcardSetService flashcardSetService;
+    private final IAccountService accountService;
 
     @PostMapping(value = "/generate", consumes = {"multipart/form-data"})
     public ResponseEntity<SimplifiedFlashcardSetResponse> generateFlashcardSet(
@@ -44,8 +48,9 @@ public class FlashcardSetController {
     @PutMapping("/{flashcardSetId}")
     public ResponseEntity<FlashcardSetResponse> updateFlashcardSet(
             @PathVariable Long flashcardSetId,
-            @RequestBody UpdateFlashcardSetRequest request) {
-        FlashcardSetResponse response = flashcardSetService.updateFlashcardSet(flashcardSetId, request);
+            @RequestBody UpdateFlashcardSetRequest request,
+            @RequestParam(required = false) String token) {
+        FlashcardSetResponse response = flashcardSetService.updateFlashcardSet(flashcardSetId, request, token);
         return ResponseEntity.ok(response);
     }
 
@@ -99,5 +104,19 @@ public class FlashcardSetController {
             @RequestBody InviteUserRequest request) {
         flashcardSetService.inviteUserToFlashcardSet(id, request.getUserId(), request.getPermission());
         return ResponseEntity.ok("User invited successfully");
+    }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<FlashcardSetResponse>> getFlashcardSetsByCategory(
+            @PathVariable Category category) {
+        List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsByCategory(category);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/my-flashcard-sets")
+    public ResponseEntity<List<FlashcardSetResponse>> getMyFlashcardSets() {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsOfUser(currentUser.getId());
+        return ResponseEntity.ok(responses);
     }
 }

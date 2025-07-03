@@ -9,6 +9,7 @@ public record SimplifiedQuizSetResponse(
         String questionType,
         int maxQuestions,
         String visibility,
+        String category,
         Integer timeLimit,
         List<SimplifiedQuizQuestionResponse> questions
 ) {}

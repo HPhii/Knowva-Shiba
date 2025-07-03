@@ -40,6 +40,9 @@ public class User {
     @Column
     private Gender gender;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private Account account;

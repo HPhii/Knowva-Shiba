@@ -35,6 +35,6 @@ public class AccountResponse {
     private Boolean isVerified;
 
     private String token;
-
-
+    
+    private String avatarUrl;
 }

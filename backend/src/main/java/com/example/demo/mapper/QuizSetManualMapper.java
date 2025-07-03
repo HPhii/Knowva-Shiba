@@ -30,6 +30,7 @@ public class QuizSetManualMapper {
                 quizSet.getQuestionType(),
                 quizSet.getMaxQuestions(),
                 quizSet.getVisibility(),
+                quizSet.getCategory(),
                 quizSet.getTimeLimit(),
                 questionResponses
         );
@@ -95,6 +96,7 @@ public class QuizSetManualMapper {
                 quizSet.getQuestionType().name(),
                 quizSet.getMaxQuestions(),
                 quizSet.getVisibility().name(),
+                quizSet.getCategory() != null ? quizSet.getCategory().name() : null,
                 quizSet.getTimeLimit(),
                 questions
         );

@@ -1,5 +1,6 @@
 package com.example.demo.service.intface;
 
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.io.request.quiz.CreateQuizSetRequest;
 import com.example.demo.model.io.request.quiz.SaveQuizSetRequest;
@@ -17,6 +18,7 @@ public interface IQuizSetService {
     List<QuizSetResponse> getQuizSetsOfUser(Long userId);
     List<QuizSetResponse> getAllQuizSets();
     QuizSetResponse deleteQuizSetById(Long id);
-    QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request);
+    QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request, String token);
     void inviteUserToQuizSet(Long quizSetId, Long invitedUserId, Permission permission);
+    List<QuizSetResponse> getQuizSetsByCategory(Category category);
 }

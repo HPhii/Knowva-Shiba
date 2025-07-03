@@ -31,6 +31,7 @@ public class FlashcardSetManualMapper {
                 flashcardSet.getLanguage(),
                 flashcardSet.getCardType(),
                 flashcardSet.getVisibility(),
+                flashcardSet.getCategory(),
                 flashcardResponses,
                 flashcardSet.getAccessToken()
         );
@@ -63,6 +64,7 @@ public class FlashcardSetManualMapper {
                 flashcardSet.getLanguage(),
                 flashcardSet.getCardType().name(),
                 flashcardSet.getVisibility().name(),
+                flashcardSet.getCategory() != null ? flashcardSet.getCategory().name() : null,
                 flashcards
         );
     }

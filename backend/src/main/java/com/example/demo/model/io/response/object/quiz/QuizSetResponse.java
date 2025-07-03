@@ -1,5 +1,6 @@
 package com.example.demo.model.io.response.object.quiz;
 
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.QuestionType;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
@@ -21,6 +22,7 @@ public class QuizSetResponse {
     private QuestionType questionType;
     private Integer maxQuestions;
     private Visibility visibility;
+    private Category category;
     private Integer timeLimit;
     private List<QuizQuestionResponse> questions;
 }

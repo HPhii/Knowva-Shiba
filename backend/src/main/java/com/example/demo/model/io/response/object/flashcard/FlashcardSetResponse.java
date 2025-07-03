@@ -1,6 +1,7 @@
 package com.example.demo.model.io.response.object.flashcard;
 
 import com.example.demo.model.enums.CardType;
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class FlashcardSetResponse {
     private String language;
     private CardType cardType;
     private Visibility visibility;
+    private Category category;
     private List<FlashcardResponse> flashcards;
     private String accessToken;
 }

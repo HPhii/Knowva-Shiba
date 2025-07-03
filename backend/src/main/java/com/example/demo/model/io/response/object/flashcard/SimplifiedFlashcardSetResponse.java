@@ -15,6 +15,6 @@ public class SimplifiedFlashcardSetResponse {
     private String language;
     private String cardType;
     private String visibility;
+    private String category;
     private List<SimplifiedFlashcardResponse> flashcards;
 }
-

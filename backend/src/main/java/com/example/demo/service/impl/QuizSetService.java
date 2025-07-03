@@ -8,6 +8,7 @@ import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizAnswer;
 import com.example.demo.model.entity.quiz.QuizQuestion;
 import com.example.demo.model.entity.quiz.QuizSet;
+import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
@@ -75,8 +76,9 @@ public class QuizSetService implements IQuizSetService {
     @Override
     @Cacheable(value = "quizSetsOfUser", key = "#userId")
     public List<QuizSetResponse> getQuizSetsOfUser(Long userId) {
+        User currentUser = accountService.getCurrentAccount().getUser();
         List<QuizSet> quizSets = quizSetRepository.findAllByOwner_Id(userId);
-        return quizSetMapper.mapToQuizSetResponseList(quizSets);
+        return getQuizSetResponses(currentUser, quizSets);
     }
 
     @Override
@@ -84,6 +86,10 @@ public class QuizSetService implements IQuizSetService {
     public List<QuizSetResponse> getAllQuizSets() {
         User currentUser = accountService.getCurrentAccount().getUser();
         List<QuizSet> allQuizSets = quizSetRepository.findAll();
+        return getQuizSetResponses(currentUser, allQuizSets);
+    }
+
+    private List<QuizSetResponse> getQuizSetResponses(User currentUser, List<QuizSet> allQuizSets) {
         List<QuizSet> accessibleQuizSets = allQuizSets.stream()
                 .filter(quizSet -> {
                     try {
@@ -95,6 +101,14 @@ public class QuizSetService implements IQuizSetService {
                 })
                 .collect(Collectors.toList());
         return quizSetMapper.mapToQuizSetResponseList(accessibleQuizSets);
+    }
+
+    @Override
+    @Cacheable(value = "quizSetsByCategory", key = "#category")
+    public List<QuizSetResponse> getQuizSetsByCategory(Category category) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        List<QuizSet> quizSets = quizSetRepository.findAllByCategory(category);
+        return getQuizSetResponses(currentUser, quizSets);
     }
 
     @Override
@@ -117,6 +131,7 @@ public class QuizSetService implements IQuizSetService {
                 .questionType(request.getQuestionType())
                 .maxQuestions(request.getMaxQuestions())
                 .visibility(request.getVisibility())
+                .category(request.getCategory())
                 .timeLimit(request.getTimeLimit())
                 .questions(questions)
                 .build();
@@ -132,7 +147,7 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    @CacheEvict(value = {"quizSet", "quizSetsOfUser", "allQuizSets"}, allEntries = true)
+    @CacheEvict(value = {"quizSet", "quizSetsOfUser", "allQuizSets", "quizSetsByCategory"}, allEntries = true)
     public QuizSetResponse saveQuizSet(SaveQuizSetRequest request) {
         User owner = accountService.getCurrentAccount().getUser();
 
@@ -144,6 +159,7 @@ public class QuizSetService implements IQuizSetService {
                 .questionType(request.getQuestionType())
                 .maxQuestions(request.getMaxQuestions())
                 .visibility(request.getVisibility())
+                .category(request.getCategory())
                 .timeLimit(request.getTimeLimit())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -188,13 +204,13 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    @CacheEvict(value = "quizSet", key = "#quizSetId")
-    public QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request) {
+    @CacheEvict(value = {"quizSet", "quizSetsByCategory"}, key = "#quizSetId")
+    public QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request, String token) {
         User currentUser = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = quizSetRepository.findById(quizSetId)
                 .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
 
-        checkAccessPermission(quizSet, currentUser, null, Permission.EDIT);
+        checkAccessPermission(quizSet, currentUser, token, Permission.EDIT);
 
         updateQuizSetInfo(quizSet, request);
 
@@ -282,6 +298,7 @@ public class QuizSetService implements IQuizSetService {
         quizSet.setQuestionType(request.getQuestionType());
         quizSet.setMaxQuestions(request.getMaxQuestions());
         quizSet.setVisibility(request.getVisibility());
+        quizSet.setCategory(request.getCategory());
         quizSet.setTimeLimit(request.getTimeLimit());
         quizSet.setUpdatedAt(LocalDateTime.now());
     }

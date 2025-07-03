@@ -53,6 +53,7 @@ public class Parser {
                     "MULTIPLE_CHOICE",
                     questions.size(),
                     "PUBLIC",
+                    "OTHER",
                     30 * questions.size(),
                     questions
             );
