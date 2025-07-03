@@ -35,7 +35,7 @@ public class FlaskAIService {
         body.put("userAnswer", userAnswer);
 
         HttpEntity<String> requestEntity = new HttpEntity<>(body.toString(), headers);
-        String url = "http://" + flaskHost + "/exam-mode-grade";
+        String url = flaskHost + "/exam-mode-grade";
 
         return restTemplate.postForObject(url, requestEntity, String.class);
     }
@@ -59,7 +59,7 @@ public class FlaskAIService {
         requestBody.set("flashcards", objectMapper.valueToTree(simplifiedFlashcards));
 
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody.toString(), headers);
-        String url = String.format("http://%s/generate-quiz-from-flashcards?language=%s&questionType=%s&maxQuestions=%d",
+        String url = String.format("%s/generate-quiz-from-flashcards?language=%s&questionType=%s&maxQuestions=%d",
                 flaskHost, language, questionType, maxQuestions);
         return restTemplate.postForObject(url, requestEntity, String.class);
     }

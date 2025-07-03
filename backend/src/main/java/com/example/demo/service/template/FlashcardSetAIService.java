@@ -49,7 +49,7 @@ public class FlashcardSetAIService extends AIServiceTemplate<List<Flashcard>> {
                 throw new IllegalArgumentException("Either files or text must be provided.");
             }
 
-            String url = "http://" + flaskHost + "/generate-flashcards?language=" + language +
+            String url = flaskHost + "/generate-flashcards?language=" + language +
                     "&sourceType=" + type +
                     "&maxFlashcards=" + (maxItems != null ? maxItems : 5);
 

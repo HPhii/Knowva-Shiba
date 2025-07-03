@@ -1,7 +1,10 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.Account;
+import com.example.demo.model.enums.Role;
+import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
@@ -23,6 +26,22 @@ public class AccountService implements IAccountService {
     private final IEmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AccountMapper accountMapper;
+
+    @Override
+    public void banUser(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + id));
+        account.setStatus(Status.BANNED);
+        accountRepository.save(account);
+    }
+
+    @Override
+    public void upgradeToPremium(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + accountId));
+        account.setRole(Role.VIP);
+        accountRepository.save(account);
+    }
 
     @Override
     public List<Account> getAllAccount() {
