@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByEmail(String email);
 
-//    Optional<Account> findByUsername(String username);
+    //    Optional<Account> findByUsername(String username);
 //    Optional<Account> findByResetPasswordToken(String token);
     Account findAccountByEmail(String email);
     Account findAccountById(long id);
@@ -26,9 +26,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("SELECT count(a) FROM Account a WHERE a.role = :role")
     long countByRole(@Param("role") Role role);
 
-    // Đếm số lượng người dùng mới từ một ngày nhất định
-    @Query("SELECT COUNT(a) FROM Account a WHERE a.createdAt >= :createdAt")
-    long countByCreatedAtAfter(@Param("createdAt") LocalDateTime createdAt);
+    long countByCreatedAtAfter(LocalDateTime createdAt);
 
     boolean existsByEmail(@Email(message = "Invalid email format") @NotBlank(message = "Email cannot be blank") String email);
 }
