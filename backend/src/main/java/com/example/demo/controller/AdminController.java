@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.entity.PaymentTransaction;
 import com.example.demo.model.enums.NotificationType;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.INotificationService;
+import com.example.demo.service.intface.IPaymentService;
 import com.example.demo.service.intface.ITokenService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -23,6 +27,7 @@ public class AdminController {
     private final ITokenService tokenService;
     private final INotificationService notificationService;
     private final IAccountService accountService;
+    private final IPaymentService paymentService;
 
     @PostMapping("/force-logout/{userId}")
     public ResponseEntity<String> forceLogout(@PathVariable Long userId) {
@@ -55,5 +60,10 @@ public class AdminController {
     public ResponseEntity<String> upgradeToPremium(@PathVariable Long accountId) {
         accountService.upgradeToPremium(accountId);
         return ResponseEntity.ok("User upgraded to premium successfully.");
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<List<PaymentTransaction>> getAllTransactions() {
+        return ResponseEntity.ok(paymentService.getAllTransactions());
     }
 }

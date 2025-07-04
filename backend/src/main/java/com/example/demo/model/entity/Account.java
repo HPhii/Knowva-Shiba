@@ -53,6 +53,12 @@ public class Account implements UserDetails {
     @Column(nullable = false)
     private Status status;
 
+    @Column(name = "vip_start_date")
+    private LocalDateTime vipStartDate;
+
+    @Column(name = "vip_end_date")
+    private LocalDateTime vipEndDate;
+
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
 

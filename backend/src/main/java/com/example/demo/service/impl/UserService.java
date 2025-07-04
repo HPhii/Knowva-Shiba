@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -45,6 +47,16 @@ public class UserService implements IUserService {
         log.info("Fetching user profile for id: {}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        Integer vipDaysLeft = null;
+        if (user.getAccount().getVipEndDate() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime endDate = user.getAccount().getVipEndDate();
+            if (endDate.isAfter(now)) {
+                vipDaysLeft = (int) ChronoUnit.DAYS.between(now, endDate);
+            }
+        }
+
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getAccount().getEmail())
@@ -52,6 +64,8 @@ public class UserService implements IUserService {
                 .birthdate(user.getBirthdate())
                 .phoneNumber(user.getPhoneNumber())
                 .gender(user.getGender())
+                .avatarUrl(user.getAvatarUrl())
+                .vipDaysLeft(vipDaysLeft)
                 .build();
     }
 
@@ -77,6 +91,7 @@ public class UserService implements IUserService {
         if (updateUserProfileDTO.getGender() != null) user.setGender(updateUserProfileDTO.getGender());
         if (updateUserProfileDTO.getUsername() != null) user.getAccount().setUsername(updateUserProfileDTO.getUsername());
         if (updateUserProfileDTO.getEmail() != null) user.getAccount().setEmail(updateUserProfileDTO.getEmail());
+        if (updateUserProfileDTO.getAvatarUrl() != null) user.setAvatarUrl(updateUserProfileDTO.getAvatarUrl());
 
         userRepository.save(user);
 
@@ -87,6 +102,7 @@ public class UserService implements IUserService {
                 .gender(user.getGender())
                 .username(user.getAccount().getUsername())
                 .email(user.getAccount().getEmail())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

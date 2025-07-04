@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,4 +30,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     long countByCreatedAtAfter(LocalDateTime createdAt);
 
     boolean existsByEmail(@Email(message = "Invalid email format") @NotBlank(message = "Email cannot be blank") String email);
+
+    List<Account> findByRole(Role role);
 }
