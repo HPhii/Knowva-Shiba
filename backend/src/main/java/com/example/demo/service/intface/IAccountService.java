@@ -14,4 +14,6 @@ public interface IAccountService {
     void sendVerifyOtp(String email);
     void verifyEmail(String email, String otp);
     long getLoggedInAccountId(String email);
+    void banUser(Long accountId);
+    void upgradeToPremium(Long accountId);
 }

@@ -1,6 +1,7 @@
 package com.example.demo.model.io.response.object;
 
 import com.example.demo.model.enums.Role;
+import com.example.demo.model.enums.Status;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +32,8 @@ public class AccountResponse {
     private String email;
 
     private Role role;
+    
+    private Status status;
 
     private Boolean isVerified;
 

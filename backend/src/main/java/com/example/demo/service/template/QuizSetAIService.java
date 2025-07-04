@@ -52,7 +52,7 @@ public class QuizSetAIService extends AIServiceTemplate<List<QuizQuestion>> {
         requestBody.set("flashcards", objectMapper.valueToTree(simplifiedFlashcards));
 
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody.toString(), headers);
-        String url = String.format("http://%s/generate-quiz-from-flashcards?language=%s&questionType=%s&maxQuestions=%d",
+        String url = String.format("%s/generate-quiz-from-flashcards?language=%s&questionType=%s&maxQuestions=%d",
                 flaskHost, language, type, maxItems != null ? maxItems : 5);
 
         return restTemplate.postForObject(url, requestEntity, String.class);
@@ -81,7 +81,7 @@ public class QuizSetAIService extends AIServiceTemplate<List<QuizQuestion>> {
                 throw new IllegalArgumentException("Invalid input type for quiz generation.");
             }
 
-            String url = String.format("http://%s/generate-quiz?language=%s&sourceType=%s&maxQuestions=%d",
+            String url = String.format("%s/generate-quiz?language=%s&sourceType=%s&maxQuestions=%d",
                     flaskHost, language, type, maxItems != null ? maxItems : 5);
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
