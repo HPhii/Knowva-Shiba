@@ -1,9 +1,11 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
 import com.example.demo.model.io.response.paged.PagedUsersResponse;
-import com.example.demo.service.impl.UserService;
+import com.example.demo.service.intface.IAccountService;
+import com.example.demo.service.intface.IUserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class UserController {
-    private final UserService userService;
+    private final IUserService userService;
+    private final IAccountService accountService;
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
@@ -32,9 +35,14 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserProfile(id));
+    }
+
+    @GetMapping("/users/me")
+    public ResponseEntity<?> getMyProfile() {
+        User user = accountService.getCurrentAccount().getUser();
+        return ResponseEntity.ok(userService.getUserProfile(user.getId()));
     }
 
     @DeleteMapping("/users/{id}")

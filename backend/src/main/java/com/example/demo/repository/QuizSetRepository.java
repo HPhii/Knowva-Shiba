@@ -6,6 +6,7 @@ import com.example.demo.model.enums.SourceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,6 @@ public interface QuizSetRepository extends JpaRepository<QuizSet, Long> {
     List<QuizSet> findAllByOwner_Id(Long userId);
     // find all by category
     List<QuizSet> findAllByCategory(Category category);
+
+    long countByCreatedAtAfter(LocalDateTime createdAtAfter);
 }
