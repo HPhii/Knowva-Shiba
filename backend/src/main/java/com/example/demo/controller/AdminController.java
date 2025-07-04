@@ -4,6 +4,7 @@ import com.example.demo.model.enums.NotificationType;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.INotificationService;
 import com.example.demo.service.intface.ITokenService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@CrossOrigin("*")
+@SecurityRequirement(name = "api")
 public class AdminController {
     private final RedisTemplate<String, String> redisTemplate;
     private final ITokenService tokenService;
