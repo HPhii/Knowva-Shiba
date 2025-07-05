@@ -42,7 +42,10 @@ public class Filter extends OncePerRequestFilter {
             "/api/send-verify-otp",
             "/api/verify-email",
             "/api/send-reset-otp",
-            "/api/reset-password"
+            "/api/reset-password",
+            "/api/payment/create-payment-link",
+            "/api/payment/success",
+            "/api/payment/cancel"
     );
 
     @Value("${jwt.secret.key}")
