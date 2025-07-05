@@ -6,6 +6,4 @@ public interface IDashboardService {
     OverviewStats getOverviewStats();
     UserStats getUserStats();
     ContentStats getContentStats();
-    PerformanceStats getPerformanceStats();
-    EngagementStats getEngagementStats();
 }

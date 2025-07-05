@@ -55,6 +55,9 @@ services:
       FLASK_SERVICE_HOST: ${FLASK_SERVICE_HOST}
       SPRING_DATA_REDIS_HOST: redis_container
       SPRING_DATA_REDIS_PORT: 6379
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID}
+      PAYOS_API_KEY: ${PAYOS_API_KEY}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY}
     depends_on:
       mysql_container:
         condition: service_healthy

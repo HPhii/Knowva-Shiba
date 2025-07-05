@@ -38,16 +38,4 @@ public class AdminDashboardController {
         ContentStats stats = dashboardService.getContentStats();
         return ResponseEntity.ok(stats);
     }
-
-    @GetMapping("/performance")
-    public ResponseEntity<PerformanceStats> getPerformanceStats() {
-        PerformanceStats stats = dashboardService.getPerformanceStats();
-        return ResponseEntity.ok(stats);
-    }
-
-    @GetMapping("/engagement")
-    public ResponseEntity<EngagementStats> getEngagementStats() {
-        EngagementStats stats = dashboardService.getEngagementStats();
-        return ResponseEntity.ok(stats);
-    }
 }
