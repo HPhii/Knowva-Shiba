@@ -14,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateQuizSetRequest {
     private String title;
+    private String description;
     private String language;
     private QuestionType questionType;
     private Integer maxQuestions;

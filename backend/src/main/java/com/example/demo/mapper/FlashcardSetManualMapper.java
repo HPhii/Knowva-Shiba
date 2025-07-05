@@ -27,6 +27,7 @@ public class FlashcardSetManualMapper {
                 flashcardSet.getId(),
                 flashcardSet.getOwner().getId(),
                 flashcardSet.getTitle(),
+                flashcardSet.getDescription(),
                 flashcardSet.getSourceType(),
                 flashcardSet.getLanguage(),
                 flashcardSet.getCardType(),
@@ -60,6 +61,7 @@ public class FlashcardSetManualMapper {
 
         return new SimplifiedFlashcardSetResponse(
                 flashcardSet.getTitle(),
+                flashcardSet.getDescription(),
                 flashcardSet.getSourceType().name(),
                 flashcardSet.getLanguage(),
                 flashcardSet.getCardType().name(),

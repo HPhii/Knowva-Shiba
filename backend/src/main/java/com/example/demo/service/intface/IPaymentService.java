@@ -10,4 +10,5 @@ public interface IPaymentService {
     void handlePaymentSuccess(String orderCode) throws Exception;
     void handlePaymentCancel(String orderCode) throws Exception;
     List<PaymentTransaction> getAllTransactions();
+    List<PaymentTransaction> getTransactionsByUserId(Long userId);
 }

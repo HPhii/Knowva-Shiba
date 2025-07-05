@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SimplifiedFlashcardSetResponse {
     private String title;
+    private String description;
     private String sourceType;
     private String language;
     private String cardType;

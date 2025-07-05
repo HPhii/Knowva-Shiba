@@ -4,7 +4,10 @@ import com.example.demo.model.entity.Account;
 import com.example.demo.model.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -27,4 +30,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByEmail(@Email(message = "Invalid email format") @NotBlank(message = "Email cannot be blank") String email);
 
     List<Account> findByRole(Role role);
+
+    @Query(value = "SELECT * FROM accounts a WHERE MATCH(a.username, a.email) AGAINST (?1 IN BOOLEAN MODE)", nativeQuery = true)
+    Page<Account> searchAccounts(String keyword, Pageable pageable);
 }

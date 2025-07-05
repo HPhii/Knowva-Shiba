@@ -126,6 +126,7 @@ public class QuizSetService implements IQuizSetService {
         QuizSet tempQuizSet = QuizSet.builder()
                 .owner(ownerAccount.getUser())
                 .title(request.getTitle())
+                .description(request.getDescription())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
                 .questionType(request.getQuestionType())
@@ -154,6 +155,7 @@ public class QuizSetService implements IQuizSetService {
         QuizSet quizSet = QuizSet.builder()
                 .owner(owner)
                 .title(request.getTitle())
+                .description(request.getDescription())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
                 .questionType(request.getQuestionType())
@@ -294,6 +296,7 @@ public class QuizSetService implements IQuizSetService {
 
     private void updateQuizSetInfo(QuizSet quizSet, UpdateQuizSetRequest request) {
         quizSet.setTitle(request.getTitle());
+        quizSet.setDescription(request.getDescription());
         quizSet.setLanguage(request.getLanguage());
         quizSet.setQuestionType(request.getQuestionType());
         quizSet.setMaxQuestions(request.getMaxQuestions());

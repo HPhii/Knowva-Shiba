@@ -30,7 +30,6 @@ public class UserService implements IUserService {
     @Override
     @Cacheable(value = "users", key = "#status + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public PagedUsersResponse getAllUsers(Status status, Pageable pageable) {
-        log.info("Fetching all user");
         Page<User> userPage = userRepository.findByAccount_Status(status, pageable);
         List<User> users = userPage.getContent();
 

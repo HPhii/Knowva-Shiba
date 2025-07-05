@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateFlashcardSetRequest {
     private String title;
+    private String description;
     private SourceType sourceType;
     private String language;
     private CardType cardType;

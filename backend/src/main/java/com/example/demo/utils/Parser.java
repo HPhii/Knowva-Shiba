@@ -48,6 +48,7 @@ public class Parser {
 
             return new SimplifiedQuizSetResponse(
                     "Generated Quiz from Flashcards",
+                    "This quiz was generated from flashcards using AI.",
                     "FLASHCARD",
                     "en",
                     "MULTIPLE_CHOICE",

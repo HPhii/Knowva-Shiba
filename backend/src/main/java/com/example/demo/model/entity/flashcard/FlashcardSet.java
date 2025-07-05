@@ -31,6 +31,9 @@ public class FlashcardSet {
 
     @Column(nullable = false)
     private String title;
+    
+    @Column
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private SourceType sourceType;

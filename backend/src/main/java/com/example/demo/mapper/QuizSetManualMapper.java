@@ -25,6 +25,7 @@ public class QuizSetManualMapper {
                 quizSet.getId(),
                 quizSet.getOwner().getId(),
                 quizSet.getTitle(),
+                quizSet.getDescription(),
                 quizSet.getSourceType(),
                 quizSet.getLanguage(),
                 quizSet.getQuestionType(),
@@ -91,6 +92,7 @@ public class QuizSetManualMapper {
 
         return new SimplifiedQuizSetResponse(
                 quizSet.getTitle(),
+                quizSet.getDescription(),
                 quizSet.getSourceType().name(),
                 quizSet.getLanguage(),
                 quizSet.getQuestionType().name(),
