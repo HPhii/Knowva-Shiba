@@ -13,12 +13,4 @@ import java.util.List;
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
     @Query("SELECT DISTINCT qa.user.id FROM QuizAttempt qa WHERE qa.startedAt > :date")
     List<Long> findUserIdsAfter(@Param("date") LocalDateTime date);
-
-    @Query("SELECT qs.id, qs.title, COUNT(qa.id) " +
-            "FROM QuizAttempt qa JOIN qa.quizSet qs " +
-            "GROUP BY qs.id, qs.title ORDER BY COUNT(qa.id) DESC")
-    List<Object[]> findTopQuizSets(@Param("limit") int limit);
-
-    @Query("SELECT AVG(qa.score) FROM QuizAttempt qa")
-    Double findAverageScore();
 }
