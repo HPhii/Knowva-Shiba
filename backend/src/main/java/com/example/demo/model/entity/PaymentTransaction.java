@@ -33,6 +33,9 @@ public class PaymentTransaction {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(length = 1000)
+    private String checkoutUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionStatus status;

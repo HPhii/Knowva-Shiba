@@ -15,10 +15,11 @@ import java.util.List;
 @AllArgsConstructor
 public class SaveFlashcardSetRequest {
     private String title;
+    private String description;
     private SourceType sourceType;
     private String language;
     private CardType cardType;
     private Visibility visibility;
-    private List<SaveFlashcardRequest> flashcards;
     private Category category;
+    private List<SaveFlashcardRequest> flashcards;
 }

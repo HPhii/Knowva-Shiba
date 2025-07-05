@@ -30,6 +30,8 @@ public class QuizSet {
     private User owner;
 
     private String title;
+    
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private SourceType sourceType;

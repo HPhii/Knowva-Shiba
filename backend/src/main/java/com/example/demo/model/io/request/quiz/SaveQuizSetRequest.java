@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SaveQuizSetRequest {
     private String title;
+    private String description;
     private SourceType sourceType;
     private String language;
     private QuestionType questionType;

@@ -20,6 +20,8 @@ public class CreateQuizSetRequest {
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title must not exceed 255 characters")
     private String title;
+    
+    private String description;
 
     @NotNull(message = "Source type is required")
     private SourceType sourceType;

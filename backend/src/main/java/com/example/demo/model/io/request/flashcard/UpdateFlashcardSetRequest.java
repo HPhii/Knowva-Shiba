@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateFlashcardSetRequest {
     private String title;
+    private String description;
     private SourceType sourceType;
     private String language;
     private CardType cardType;

@@ -70,6 +70,7 @@ public class PaymentService implements IPaymentService {
                 .build();
 
         CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+        String checkoutUrl = data.getCheckoutUrl();
 
         PaymentTransaction transaction = PaymentTransaction.builder()
                 .user(user)
@@ -77,11 +78,12 @@ public class PaymentService implements IPaymentService {
                 .amount(price)
                 .description(description)
                 .createdAt(LocalDateTime.now())
+                .checkoutUrl(checkoutUrl)
                 .status(PaymentTransaction.TransactionStatus.PENDING)
                 .build();
         paymentTransactionRepository.save(transaction);
 
-        return new PaymentResponse(data.getCheckoutUrl());
+        return new PaymentResponse(checkoutUrl);
     }
 
     @Override
@@ -127,5 +129,12 @@ public class PaymentService implements IPaymentService {
     @Override
     public List<PaymentTransaction> getAllTransactions() {
         return paymentTransactionRepository.findAll();
+    }
+
+    @Override
+    public List<PaymentTransaction> getTransactionsByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        return paymentTransactionRepository.findByUser(user);
     }
 }

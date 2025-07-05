@@ -32,12 +32,16 @@ public class AccountResponse {
     private String email;
 
     private Role role;
-    
+
     private Status status;
 
     private Boolean isVerified;
 
     private String token;
-    
+
     private String avatarUrl;
+
+    private String fullName;
+
+    private String phoneNumber;
 }

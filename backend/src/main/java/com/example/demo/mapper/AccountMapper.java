@@ -10,6 +10,8 @@ public interface AccountMapper {
     @Mapping(source = "id", target = "accountId")
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "user.avatarUrl", target = "avatarUrl")
+    @Mapping(source = "user.fullName", target = "fullName")
+    @Mapping(source = "user.phoneNumber", target = "phoneNumber")
     @Mapping(source = "status", target = "status")
     @Mapping(target = "token", ignore = true)
     AccountResponse toAccountResponse(Account account);

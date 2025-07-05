@@ -5,6 +5,7 @@ import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
 import com.example.demo.model.io.response.paged.PagedUsersResponse;
 import com.example.demo.service.intface.IAccountService;
+import com.example.demo.service.intface.IPaymentService;
 import com.example.demo.service.intface.IUserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -16,15 +17,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users")
 @CrossOrigin("*")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
 public class UserController {
     private final IUserService userService;
     private final IAccountService accountService;
+    private final IPaymentService paymentService;
 
-    @GetMapping("/users")
+    @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PagedUsersResponse> getAllUsers(@RequestParam Status status,
                                                           @RequestParam(defaultValue = "0") int page,
@@ -34,26 +36,32 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/users/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getUserProfile(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserProfile(id));
     }
 
-    @GetMapping("/users/me")
+    @GetMapping("/me")
     public ResponseEntity<?> getMyProfile() {
         User user = accountService.getCurrentAccount().getUser();
         return ResponseEntity.ok(userService.getUserProfile(user.getId()));
     }
 
-    @DeleteMapping("/users/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
 
-    @PutMapping("/users/{id}/update")
+    @PutMapping("/{id}/update")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<?> updateUserProfile(@PathVariable Long id, @RequestBody @Valid UpdateUserProfileDTO updateUserProfileDTO) {
         return ResponseEntity.ok(userService.updateUserProfile(id, updateUserProfileDTO));
+    }
+
+    @GetMapping("/{id}/transactions")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    public ResponseEntity<?> getUserTransactions(@PathVariable Long id){
+        return ResponseEntity.ok(paymentService.getTransactionsByUserId(id));
     }
 }

@@ -17,6 +17,7 @@ public class FlashcardSetResponse {
     private Long id;
     private Long userId;
     private String title;
+    private String description;
     private SourceType sourceType;
     private String language;
     private CardType cardType;

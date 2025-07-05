@@ -58,20 +58,6 @@ public class FlashcardSetService implements IFlashcardSetService {
         return getFlashcardSetResponses(currentUser, allFlashcardSets);
     }
 
-    private List<FlashcardSetResponse> getFlashcardSetResponses(User currentUser, List<FlashcardSet> allFlashcardSets) {
-        List<FlashcardSet> accessibleFlashcardSets = allFlashcardSets.stream()
-                .filter(flashcardSet -> {
-                    try {
-                        checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
-                        return true;
-                    } catch (SecurityException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
-        return flashcardSetMapper.mapToFlashcardSetResponseList(accessibleFlashcardSets);
-    }
-
     @Override
     @Cacheable(value = "flashcardSetsOfUser", key = "#userId")
     public List<FlashcardSetResponse> getFlashcardSetsOfUser(Long userId) {
@@ -86,6 +72,20 @@ public class FlashcardSetService implements IFlashcardSetService {
         User currentUser = accountService.getCurrentAccount().getUser();
         List<FlashcardSet> flashcardSets = flashcardSetRepository.findAllByCategory(category);
         return getFlashcardSetResponses(currentUser, flashcardSets);
+    }
+
+    private List<FlashcardSetResponse> getFlashcardSetResponses(User currentUser, List<FlashcardSet> allFlashcardSets) {
+        List<FlashcardSet> accessibleFlashcardSets = allFlashcardSets.stream()
+                .filter(flashcardSet -> {
+                    try {
+                        checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
+                        return true;
+                    } catch (SecurityException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+        return flashcardSetMapper.mapToFlashcardSetResponseList(accessibleFlashcardSets);
     }
 
     @Override
@@ -103,6 +103,7 @@ public class FlashcardSetService implements IFlashcardSetService {
         FlashcardSet tempFlashcardSet = FlashcardSet.builder()
                 .owner(ownerAccount.getUser())
                 .title(request.getTitle())
+                .description(request.getDescription())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
                 .cardType(request.getCardType())
@@ -125,6 +126,7 @@ public class FlashcardSetService implements IFlashcardSetService {
         FlashcardSet flashcardSet = FlashcardSet.builder()
                 .owner(owner)
                 .title(request.getTitle())
+                .description(request.getDescription())
                 .sourceType(request.getSourceType())
                 .language(request.getLanguage())
                 .cardType(request.getCardType())
@@ -166,6 +168,7 @@ public class FlashcardSetService implements IFlashcardSetService {
         checkAccessPermission(flashcardSet, currentUser, token, Permission.EDIT);
 
         flashcardSet.setTitle(request.getTitle());
+        flashcardSet.setDescription(request.getDescription());
         flashcardSet.setSourceType(request.getSourceType());
         flashcardSet.setLanguage(request.getLanguage());
         flashcardSet.setCardType(request.getCardType());
