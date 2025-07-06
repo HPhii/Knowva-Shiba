@@ -1,7 +1,9 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AccountBannedException;
 import com.example.demo.exception.DuplicateEntity;
 import com.example.demo.exception.EntityNotFoundException;
+import com.example.demo.exception.PasswordMismatchEntity;
 import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.User;
@@ -115,12 +117,23 @@ public class AuthenticationService implements IAuthenticationService {
                     )
             );
             Account account = (Account) authentication.getPrincipal();
+            
+            // Check account status
+            if (account.getStatus() == Status.BANNED) {
+                throw new EntityNotFoundException("Your account has been banned");
+            }
+            
+            if (account.getStatus() == Status.INACTIVE) {
+                throw new EntityNotFoundException("Your account is inactive");
+            }
+            
+            // Generate token even for unverified accounts, but client should handle verification state
             String token = generateAndStoreToken(account);
             AccountResponse accountResponse = accountMapper.toAccountResponse(account);
             accountResponse.setToken(token);
             return accountResponse;
         } catch (Exception e) {
-            throw new EntityNotFoundException("Incorrect Email or Password");
+            throw new PasswordMismatchEntity("Incorrect Email or Password");
         }
     }
 
@@ -178,8 +191,14 @@ public class AuthenticationService implements IAuthenticationService {
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .user(newUser)
+                    .isVerified(true)
                     .build();
             accountRepository.save(account);
+        } else {
+            // Check if existing account is banned
+            if (account.getStatus() == Status.BANNED) {
+                throw new AccountBannedException("Your account has been banned");
+            }
         }
 
         String token = generateAndStoreToken(account);
