@@ -3,12 +3,14 @@ services:
   mysql_container:
     image: mysql:8.0
     container_name: mysql_db_container
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: exe
     ports:
       - "3306:3306"
     volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
       - mysql_data:/var/lib/mysql
     networks:
       - backend
