@@ -105,17 +105,17 @@ public class Account implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // hoặc dùng flag nếu cần
+        return true; // Account expiration not implemented
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // hoặc dùng flag nếu cần
+        return this.status != Status.BANNED;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // hoặc dùng flag nếu cần
+        return true; // Credential expiration not implemented
     }
 
     @Override

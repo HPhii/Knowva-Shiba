@@ -70,7 +70,7 @@ public class AccountService implements IAccountService {
     @Override
     public void resetPassword(String email, String otp, String newPassword) {
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Account not found" + email));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found" + email));
 
         if (account.getResetOtp() == null || !account.getResetOtp().equals(otp)) {
             throw new RuntimeException("Invalid OTP");
@@ -95,7 +95,7 @@ public class AccountService implements IAccountService {
     @Override
     public void verifyEmail(String email, String otp) {
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Account not found" + email));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found" + email));
 
         if (account.getVerifyOtp() == null || !account.getVerifyOtp().equals(otp)) {
             throw new RuntimeException("Invalid OTP");
@@ -115,7 +115,7 @@ public class AccountService implements IAccountService {
     @Override
     public long getLoggedInAccountId(String email) {
         Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Account not found" + email));
+                .orElseThrow(() -> new EntityNotFoundException("Account not found" + email));
         return account.getId();
     }
 

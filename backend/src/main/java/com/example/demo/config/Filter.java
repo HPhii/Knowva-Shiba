@@ -1,7 +1,9 @@
 package com.example.demo.config;
 
+import com.example.demo.exception.AccountBannedException;
 import com.example.demo.model.entity.Account;
 import com.example.demo.exception.AuthException;
+import com.example.demo.model.enums.Status;
 import com.example.demo.service.intface.ITokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -39,13 +41,40 @@ public class Filter extends OncePerRequestFilter {
             "/api/register",
             "/api/login",
             "/api/google",
-            "/api/send-verify-otp",
-            "/api/verify-email",
             "/api/send-reset-otp",
             "/api/reset-password",
-            "/api/payment/create-payment-link",
             "/api/payment/success",
-            "/api/payment/cancel"
+            "/api/payment/cancel",
+            "/api/payment/payos-webhook",
+            "/api/search/quiz-sets",
+            "/api/search/flashcard-sets",
+            "/api/search/accounts",
+            "/api/quiz-sets/all",
+            "/api/quiz-sets/{id}",
+            "/api/quiz-sets/category/{category}",
+            "/api/flashcard-sets/all",
+            "/api/flashcard-sets/{id}",
+            "/api/flashcard-sets/category/{category}"
+    );
+
+    private final List<String> VERIFIED_EMAIL_PERMISSION = List.of(
+            "/api/users/{id}/update",
+            "/api/payment/create-payment-link",
+            "/api/notifications/**",
+            "/api/quiz-sets/generate",
+            "/api/quiz-sets/save",
+            "/api/quiz-sets/{id}/invite",
+            "/api/quiz-sets/{quizSetId}",
+            "/api/quiz-sets/{id}",
+            "/api/quiz-attempts/**",
+            "/api/flashcard-sets/generate",
+            "/api/flashcard-sets/save",
+            "/api/flashcard-sets/{flashcardSetId}",
+            "/api/flashcard-sets/{id}",
+            "/api/flashcard-sets/{flashcardSetId}/exam-mode/submit",
+            "/api/flashcard-sets/{flashcardSetId}/generate-quiz",
+            "/api/flashcard-sets/{id}/invite",
+            "/api/spaced-repetition/**"
     );
 
     @Value("${jwt.secret.key}")
@@ -65,6 +94,11 @@ public class Filter extends OncePerRequestFilter {
         AntPathMatcher pathMatcher = new AntPathMatcher();
 
         return AUTH_PERMISSION.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
+    }
+
+    public boolean checkRequiresVerifiedEmail(String uri) {
+        AntPathMatcher pathMatcher = new AntPathMatcher();
+        return VERIFIED_EMAIL_PERMISSION.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 
     public String getToken(HttpServletRequest request) {
@@ -102,6 +136,26 @@ public class Filter extends OncePerRequestFilter {
 
         try {
             Account account = tokenService.getAccountByToken(token);
+            
+            // Check account status
+            if (account.getStatus() == Status.BANNED) {
+                handlerExceptionResolver.resolveException(request, response, null,
+                        new AccountBannedException("Your account has been banned"));
+                return;
+            }
+            
+            if (account.getStatus() == Status.INACTIVE) {
+                handlerExceptionResolver.resolveException(request, response, null,
+                        new AccountBannedException("Your account is inactive"));
+                return;
+            }
+
+            if (checkRequiresVerifiedEmail(uri) && !Boolean.TRUE.equals(account.getIsVerified())) {
+                handlerExceptionResolver.resolveException(request, response, null,
+                        new AuthException("Email verification required"));
+                return;
+            }
+            
             // Lấy role từ token
             Claims claims = Jwts.parser()
                     .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY)))
