@@ -45,6 +45,7 @@ public class Filter extends OncePerRequestFilter {
             "/api/reset-password",
             "/api/payment/success",
             "/api/payment/cancel",
+            "/api/payment/payos-webhook",
             "/api/search/quiz-sets",
             "/api/search/flashcard-sets",
             "/api/search/accounts",
