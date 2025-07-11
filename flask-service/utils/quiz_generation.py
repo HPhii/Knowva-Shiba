@@ -10,110 +10,133 @@ LLAMDA_API_KEY4 = os.getenv("LLAMDA_API_KEY4")  # For generate_quiz_from_flashca
 client1 = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=LLAMDA_API_KEY1)
 client4 = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=LLAMDA_API_KEY4)
 
-def generate_quiz(text, language, question_type, max_questions):
+
+def _get_system_prompt(language, question_type, max_questions):
+    """A helper function to generate the appropriate system prompt."""
+
+    # --- SHARED PRINCIPLES ---
+    base_prompt = f"""
+You are a master academic assistant and an expert in pedagogy. Your task is to create a high-quality quiz in **{language}** based on the provided text. The goal is to create questions that test deep understanding, not just simple recall.
+
+**Core Pedagogical Principles:**
+1.  **Test Understanding, Not Just Memory:** Questions should require the user to apply, analyze, or evaluate information (e.g., "Why...", "What is the main advantage of...").
+2.  **Clarity and Precision:** Questions must be unambiguous.
+3.  **Plausible Distractors:** For multiple-choice questions, the incorrect options (distractors) should be realistic and address common misconceptions.
+4.  **Relevance:** All questions must be directly answerable from the provided text.
+
+**Your Task:**
+-   Generate exactly **{max_questions}** questions.
+-   The output must be a single, valid JSON object. Do NOT include any text outside the JSON.
+-   If the input text is insufficient, return an empty list: `{{"questions": []}}`
+"""
+
+    # --- TYPE-SPECIFIC INSTRUCTIONS AND EXAMPLES ---
     if question_type == "MULTIPLE_CHOICE":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate quiz questions with multiple-choice answers based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). Each question should have exactly four answer options, with one correct answer and three incorrect but plausible distractors. The output must be structured as a JSON object matching the following format:
+        return base_prompt + f"""
+**Instructions for Multiple Choice:**
+-   Each question must have exactly one correct answer and three plausible, incorrect distractors.
+-   Distractors should be common errors or related but incorrect concepts from the text.
 
-{{
-    "questions": [
+---
+**Example:**
+
+* **Input Text:** "Trong quang hợp, thực vật sử dụng năng lượng ánh sáng mặt trời, nước và carbon dioxide để tạo ra glucose (năng lượng) và oxy. Diệp lục là sắc tố màu xanh lá cây giúp hấp thụ năng lượng ánh sáng."
+* **Your JSON Output:**
+    ```json
+    {{
+      "questions": [
         {{
-            "questionText": "Question text in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "Answer text in {language}", "isCorrect": true}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}}
-            ]
+          "questionText": "Đâu là vai trò chính của diệp lục trong quá trình quang hợp?",
+          "questionHtml": null,
+          "imageUrl": null,
+          "timeLimit": 30,
+          "answers": [
+            {{"answerText": "Hấp thụ năng lượng ánh sáng", "isCorrect": true}},
+            {{"answerText": "Tạo ra khí oxy", "isCorrect": false}},
+            {{"answerText": "Tổng hợp nước và carbon dioxide", "isCorrect": false}},
+            {{"answerText": "Làm cho lá có màu xanh", "isCorrect": false}}
+          ]
         }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_questions} questions.
-2. Ensure questions are factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. Answers should be concise, with one correct answer and three plausible distractors.
-5. Set a default time limit of 30 seconds per question.
-6. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-7. If the input content is insufficient to generate {max_questions} questions, generate as many as possible.
+      ]
+    }}
+    ```
+---
 """
     elif question_type == "TRUE_FALSE":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate true/false quiz questions based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). Each question should have two answer options: "True" and "False". The output must be structured as a JSON object matching the following format:
+        return base_prompt + f"""
+**Instructions for True/False:**
+-   Create a statement that is either true or false based *directly* on the text.
+-   The statement should test a nuanced point, not just an obvious fact.
 
-{{
-    "questions": [
+---
+**Example:**
+
+* **Input Text:** "Dù Sao Hỏa được gọi là 'Hành tinh Đỏ', bầu trời của nó vào ban ngày lại có màu hồng nhạt, và hoàng hôn lại có màu xanh lam."
+* **Your JSON Output:**
+    ```json
+    {{
+      "questions": [
         {{
-            "questionText": "Question text in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "True", "isCorrect": true/false}},
-                {{"answerText": "False", "isCorrect": false/true}}
-            ]
+          "questionText": "Trên Sao Hỏa, hoàng hôn có màu đỏ tương tự như màu của hành tinh.",
+          "questionHtml": null,
+          "imageUrl": null,
+          "timeLimit": 30,
+          "answers": [
+            {{"answerText": "True", "isCorrect": false}},
+            {{"answerText": "False", "isCorrect": true}}
+          ]
         }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_questions} questions.
-2. Ensure questions are factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. For each question, randomly decide whether the statement is true or false.
-5. Set a default time limit of 30 seconds per question.
-6. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-7. If the input content is insufficient to generate {max_questions} questions, generate as many as possible.
+      ]
+    }}
+    ```
+---
 """
     elif question_type == "MIXED":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate a mix of multiple-choice and true/false quiz questions based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). The output must be structured as a JSON object matching the following format, where each question can be either multiple-choice (4 answer options) or true/false (2 answer options):
+        # For MIXED, we combine the instructions and provide both examples.
+        return base_prompt + f"""
+**Instructions for Mixed Types:**
+-   Generate a balanced mix of Multiple Choice and True/False questions.
+-   For Multiple Choice, provide one correct answer and three plausible distractors.
+-   For True/False, create a nuanced statement that is either true or false.
 
-{{
-    "questions": [
-        // Example of a Multiple Choice Question
-        {{
-            "questionText": "Question text for MC in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "MC Answer 1 in {language}", "isCorrect": true}},
-                {{"answerText": "MC Answer 2 in {language}", "isCorrect": false}},
-                {{"answerText": "MC Answer 3 in {language}", "isCorrect": false}},
-                {{"answerText": "MC Answer 4 in {language}", "isCorrect": false}}
-            ]
-        }},
-        // Example of a True/False Question
-        {{
-            "questionText": "Question text for T/F in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "True", "isCorrect": true/false}},
-                {{"answerText": "False", "isCorrect": false/true}}
-            ]
-        }}
-    ]
-}}
+---
+**Example 1 (Multiple Choice):**
 
-Guidelines:
-1. Generate exactly {max_questions} questions in total.
-2. The questions should be a mix of multiple-choice and true/false types. Aim for a balanced distribution if possible.
-3. Ensure questions are factually accurate and relevant to the input content.
-4. Use academic language appropriate for the target language ({language}).
-5. Multiple-choice questions should have one correct answer and three plausible distractors. True/false questions should have "True" and "False" as options, with one being correct.
-6. Set a default time limit of 30 seconds per question.
-7. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-8. If the input content is insufficient to generate {max_questions} questions, generate as many as possible, maintaining a mix if feasible.
+* **Input Text:** "Trong quang hợp, thực vật sử dụng năng lượng ánh sáng mặt trời, nước và carbon dioxide để tạo ra glucose (năng lượng) và oxy. Diệp lục là sắc tố màu xanh lá cây giúp hấp thụ năng lượng ánh sáng."
+* **Your JSON Output for this part:**
+    ```json
+    {{
+      "questionText": "Đâu là vai trò chính của diệp lục trong quá trình quang hợp?",
+      "answers": [
+        {{"answerText": "Hấp thụ năng lượng ánh sáng", "isCorrect": true}},
+        {{"answerText": "Tạo ra khí oxy", "isCorrect": false}},
+        {{"answerText": "Tổng hợp nước và carbon dioxide", "isCorrect": false}},
+        {{"answerText": "Làm cho lá có màu xanh", "isCorrect": false}}
+      ]
+    }}
+    ```
+
+**Example 2 (True/False):**
+
+* **Input Text:** "Dù Sao Hỏa được gọi là 'Hành tinh Đỏ', bầu trời của nó vào ban ngày lại có màu hồng nhạt, và hoàng hôn lại có màu xanh lam."
+* **Your JSON Output for this part:**
+    ```json
+    {{
+      "questionText": "Trên Sao Hỏa, hoàng hôn có màu đỏ tương tự như màu của hành tinh.",
+      "answers": [
+        {{"answerText": "True", "isCorrect": false}},
+        {{"answerText": "False", "isCorrect": true}}
+      ]
+    }}
+    ```
+---
 """
     else:
         raise ValueError(f"Unsupported question type: {question_type}")
+
+
+def generate_quiz(text, language, question_type, max_questions):
+    SYSTEM_PROMPT = _get_system_prompt(language, question_type.upper(), max_questions)
 
     completion = client1.chat.completions.create(
         model="nvidia/llama-3.1-nemotron-ultra-253b-v1",
@@ -121,7 +144,7 @@ Guidelines:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
-        temperature=0.6,
+        temperature=0.5,
         top_p=0.95,
         max_tokens=4096,
         frequency_penalty=0,
@@ -137,111 +160,10 @@ Guidelines:
     else:
         raise ValueError("Could not parse JSON response")
 
+
 def generate_quiz_from_flashcards(flashcards, language, question_type, max_questions):
     text = "\n".join([f"Front: {fc['front']}\nBack: {fc['back']}" for fc in flashcards])
-    if question_type == "MULTIPLE_CHOICE":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate quiz questions with multiple-choice answers based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). Each question should have exactly four answer options, with one correct answer and three incorrect but plausible distractors. The output must be structured as a JSON object matching the following format:
-
-{{
-    "questions": [
-        {{
-            "questionText": "Question text in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "Answer text in {language}", "isCorrect": true}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}},
-                {{"answerText": "Answer text in {language}", "isCorrect": false}}
-            ]
-        }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_questions} questions.
-2. Ensure questions are factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. Answers should be concise, with one correct answer and three plausible distractors.
-5. Set a default time limit of 30 seconds per question.
-6. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-7. If the input content is insufficient to generate {max_questions} questions, generate as many as possible.
-"""
-    elif question_type == "TRUE_FALSE":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate true/false quiz questions based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). Each question should have two answer options: "True" and "False". The output must be structured as a JSON object matching the following format:
-
-{{
-    "questions": [
-        {{
-            "questionText": "Question text in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "True", "isCorrect": true/false}},
-                {{"answerText": "False", "isCorrect": false/true}}
-            ]
-        }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_questions} questions.
-2. Ensure questions are factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. For each question, randomly decide whether the statement is true or false.
-5. Set a default time limit of 30 seconds per question.
-6. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-7. If the input content is insufficient to generate {max_questions} questions, generate as many as possible.
-"""
-    elif question_type == "MIXED":
-        SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality, pedagogically sound quiz questions for educational purposes. Your task is to generate a mix of multiple-choice and true/false quiz questions based on the provided input content. The questions should be clear, concise, and suitable for academic learning in the specified target language ({language}). The output must be structured as a JSON object matching the following format, where each question can be either multiple-choice (4 answer options) or true/false (2 answer options):
-
-{{
-    "questions": [
-        // Example of a Multiple Choice Question
-        {{
-            "questionText": "Question text for MC in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "MC Answer 1 in {language}", "isCorrect": true}},
-                {{"answerText": "MC Answer 2 in {language}", "isCorrect": false}},
-                {{"answerText": "MC Answer 3 in {language}", "isCorrect": false}},
-                {{"answerText": "MC Answer 4 in {language}", "isCorrect": false}}
-            ]
-        }},
-        // Example of a True/False Question
-        {{
-            "questionText": "Question text for T/F in {language}",
-            "questionHtml": null,
-            "imageUrl": null,
-            "timeLimit": 30,
-            "answers": [
-                {{"answerText": "True", "isCorrect": true/false}},
-                {{"answerText": "False", "isCorrect": false/true}}
-            ]
-        }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_questions} questions in total.
-2. The questions should be a mix of multiple-choice and true/false types. Aim for a balanced distribution if possible.
-3. Ensure questions are factually accurate and relevant to the input content.
-4. Use academic language appropriate for the target language ({language}).
-5. Multiple-choice questions should have one correct answer and three plausible distractors. True/false questions should have "True" and "False" as options, with one being correct.
-6. Set a default time limit of 30 seconds per question.
-7. Do not include images or HTML in the output (set questionHtml and imageUrl to null).
-8. If the input content is insufficient to generate {max_questions} questions, generate as many as possible, maintaining a mix if feasible.
-"""
-    else:
-        raise ValueError(f"Unsupported question type: {question_type}")
+    SYSTEM_PROMPT = _get_system_prompt(language, question_type.upper(), max_questions)
 
     completion = client4.chat.completions.create(
         model="nvidia/llama-3.1-nemotron-ultra-253b-v1",
@@ -249,7 +171,7 @@ Guidelines:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
-        temperature=0.6,
+        temperature=0.5,
         top_p=0.95,
         max_tokens=4096,
         frequency_penalty=0,

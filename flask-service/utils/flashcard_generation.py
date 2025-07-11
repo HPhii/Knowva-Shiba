@@ -11,45 +11,81 @@ client2 = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=LLAMDA_
 def generate_flashcards(text, language, card_type, max_flashcards):
     if card_type == "STANDARD":
         SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality flashcards for educational purposes. Your task is to generate flashcards based on the provided input content. Each flashcard should have a front and a back, suitable for academic learning in the specified target language ({language}). The output must be structured as a JSON object matching the following format:
+You are a master academic assistant. Your goal is to create high-quality, effective flashcards in **{language}** from the provided text. A great flashcard isolates a single, important concept.
 
-{{
-    "flashcards": [
+**Core Principles for a High-Quality Flashcard:**
+1.  **Atomic:** One question on the front, one answer on the back. Avoid multiple questions or long lists.
+2.  **Understandable:** The question must be clear without needing extra context.
+3.  **Essential:** Focus on key terms, definitions, and core concepts, not trivial details.
+
+**Your Task:**
+-   Generate exactly **{max_flashcards}** flashcards.
+-   The output must be a valid JSON object. Do NOT include any text outside the JSON.
+-   If the text is too short or irrelevant, return an empty list: `{{"flashcards": []}}`
+
+---
+
+**Example:**
+
+* **Input Text:** "The mitochondria is the powerhouse of the cell. It generates most of the cell's supply of adenosine triphosphate (ATP), used as a source of chemical energy. The process of cellular respiration occurs in the mitochondria."
+
+* **Your JSON output:**
+    ```json
+    {{
+      "flashcards": [
         {{
-            "front": "Front text in {language}",
-            "back": "Back text in {language}",
-            "imageUrl": null
+          "front": "What is the primary function of the mitochondria?",
+          "back": "It is the 'powerhouse' of the cell, generating most of its chemical energy in the form of ATP.",
+          "imageUrl": null
+        }},
+        {{
+          "front": "What is ATP?",
+          "back": "Adenosine triphosphate, the main source of chemical energy in a cell.",
+          "imageUrl": null
         }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_flashcards} flashcards.
-2. Ensure the content is factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. Do not include images (set imageUrl to null).
-5. If the input content is insufficient to generate {max_flashcards} flashcards, generate as many as possible.
+      ]
+    }}
+    ```
+---
 """
     elif card_type == "FILL_IN_THE_BLANK":
         SYSTEM_PROMPT = f"""
-You are an advanced academic assistant specialized in creating high-quality fill-in-the-blank flashcards for educational purposes. Your task is to generate flashcards where the front has a sentence with a blank, and the back has the correct word or phrase to fill in the blank, suitable for academic learning in the specified target language ({language}). The output must be structured as a JSON object matching the following format:
+You are a master academic assistant. Your task is to create high-quality, fill-in-the-blank style flashcards in **{language}**.
 
-{{
-    "flashcards": [
+**Core Principles for a High-Quality Fill-in-the-Blank Flashcard:**
+1.  **Single Blank:** The front should have only one blank (`____`).
+2.  **Context is Key:** The sentence on the front must provide enough context to logically deduce the answer on the back.
+3.  **Concise Answer:** The back should contain *only* the word(s) that fill the blank, nothing more.
+
+**Your Task:**
+-   Generate exactly **{max_flashcards}** flashcards.
+-   The output must be a valid JSON object. Do NOT include any text outside the JSON.
+-   If the text is too short or irrelevant, return an empty list: `{{"flashcards": []}}`
+
+---
+
+**Example:**
+
+* **Input Text:** "The Treaty of Versailles was the most important of the peace treaties that brought World War I to an end. The treaty was signed on 28 June 1919."
+
+* **Your JSON output:**
+    ```json
+    {{
+      "flashcards": [
         {{
-            "front": "Sentence with a blank in {language}, e.g., 'The capital of France is ____.'",
-            "back": "Correct word or phrase in {language}, e.g., 'Paris'",
-            "imageUrl": null
+          "front": "The Treaty of ____ was the most important peace treaty that brought World War I to an end.",
+          "back": "Versailles",
+          "imageUrl": null
+        }},
+        {{
+          "front": "The Treaty of Versailles was signed on ____.",
+          "back": "28 June 1919",
+          "imageUrl": null
         }}
-    ]
-}}
-
-Guidelines:
-1. Generate exactly {max_flashcards} flashcards.
-2. Ensure the content is factually accurate and relevant to the input content.
-3. Use academic language appropriate for the target language ({language}).
-4. Do not include images (set imageUrl to null).
-5. If the input content is insufficient to generate {max_flashcards} flashcards, generate as many as possible.
+      ]
+    }}
+    ```
+---
 """
     else:
         raise ValueError(f"Unsupported card type: {card_type}")
@@ -60,7 +96,7 @@ Guidelines:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
-        temperature=0.6,
+        temperature=0.5,  # Giảm nhẹ để AI bám sát quy tắc hơn
         top_p=0.95,
         max_tokens=4096,
         frequency_penalty=0,
