@@ -38,7 +38,7 @@ services:
       retries: 5
 
   app:
-    image: hieuphi/springapp:lastest
+    image: hieuphi/springapp:latest
     container_name: springboot_container
     environment:
       MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
@@ -72,7 +72,7 @@ services:
       - backend
 
   flask_app:
-    image: hieuphi/flaskapp:lastest
+    image: hieuphi/flaskapp:latest
     container_name: flask_container
     environment:
       LLAMDA_API_KEY1: ${LLAMDA_API_KEY1}
