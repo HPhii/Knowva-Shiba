@@ -54,7 +54,9 @@ public class Filter extends OncePerRequestFilter {
             "/api/quiz-sets/category/{category}",
             "/api/flashcard-sets/all",
             "/api/flashcard-sets/{id}",
-            "/api/flashcard-sets/category/{category}"
+            "/api/flashcard-sets/category/{category}",
+            "/api/feedback",
+            "/api/bug-reports"
     );
 
     private final List<String> VERIFIED_EMAIL_PERMISSION = List.of(
