@@ -22,27 +22,25 @@ public class EmailService implements IEmailService {
     @Override
     public void sendMail(EmailDetails emailDetails, String templateName, Map<String, Object> contextVariables) throws MessagingException {
         try {
-            // Create the context for Thymeleaf template
             Context context = new Context();
-            context.setVariables(contextVariables); // Set dynamic variables from the map
+            context.setVariables(contextVariables);
+            context.setVariable("subject", emailDetails.getSubject());
+            context.setVariable("template", "email/" + templateName);
 
-            // Process the template
-            String templateContent = templateEngine.process(templateName, context);
+            String htmlContent = templateEngine.process("email/base", context);
 
-            // Creating a simple mail message
             MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage);
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            // Set the email details
             mimeMessageHelper.setFrom("admin@gmail.com");
             mimeMessageHelper.setTo(emailDetails.getReceiver().getEmail());
-            mimeMessageHelper.setText(templateContent, true);
             mimeMessageHelper.setSubject(emailDetails.getSubject());
+            mimeMessageHelper.setText(htmlContent, true);
 
-            // Send mail
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
             System.out.println("ERROR MAIL SENT: " + e.getMessage());
+            throw e;
         }
     }
 }

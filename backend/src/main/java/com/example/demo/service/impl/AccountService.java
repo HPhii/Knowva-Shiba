@@ -155,7 +155,7 @@ public class AccountService implements IAccountService {
                     "exptime", ((expirationTime - System.currentTimeMillis()) / (60 * 1000)) + 1
             );
 
-            emailService.sendMail(emailDetails, "send-otp-template", context);
+            emailService.sendMail(emailDetails, "otp.html", context);
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send email", e);
         }

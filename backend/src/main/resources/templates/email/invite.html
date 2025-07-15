@@ -1,0 +1,13 @@
+<div th:fragment="content">
+    <h1>Bạn có một lời mời học tập!</h1>
+    <p>Xin chào <strong th:text="${invitedUserName}">Bạn</strong>,</p>
+    <p>
+        Người dùng <strong th:text="${inviterName}">một người bạn</strong> đã mời bạn tham gia vào bộ
+        <strong th:text="${setType == 'Flashcard' ? 'thẻ học' : 'câu hỏi'}">học liệu</strong>
+        với tiêu đề:
+    </p>
+    <h2 style="color: #005c29; text-align: center;" th:text="${setName}">Tiêu đề Set</h2>
+    <p>Quyền của bạn là: <strong th:text="${permission}">Xem</strong>.</p>
+    <p>Hãy đăng nhập và chấp nhận lời mời để cùng nhau học tập nhé!</p>
+    <a th:href="${'http://localhost:5173/set/' + setId}" class="button">Xem lời mời</a>
+</div>
