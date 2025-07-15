@@ -40,12 +40,7 @@ public class FlashcardSetController {
     private final IAccountService accountService;
 
     @PostMapping(value = "/generate", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    @Operation(summary = "Tạo bộ thẻ học từ AI", description = "Tải lên văn bản hoặc file để AI tự động tạo ra một bộ thẻ học.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Tạo thành công, trả về bộ thẻ đã được đơn giản hóa",
-                    content = @Content(schema = @Schema(implementation = SimplifiedFlashcardSetResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Dữ liệu đầu vào không hợp lệ")
-    })
+    @Operation(summary = "Tạo Flashcard Set từ AI (POSTMAN)", description = "Tải lên văn bản hoặc file để AI tự động tạo ra một Flashcard Set.")
     public ResponseEntity<SimplifiedFlashcardSetResponse> generateFlashcardSet(
             @Parameter(description = "Thông tin cài đặt cho bộ thẻ") @RequestPart("flashcardSet") CreateFlashcardSetRequest flashcardSetRequest,
             @Parameter(description = "Danh sách file để AI phân tích") @RequestPart(value = "files", required = false) List<MultipartFile> files,
@@ -55,7 +50,7 @@ public class FlashcardSetController {
     }
 
     @PostMapping("/save")
-    @Operation(summary = "Lưu một bộ thẻ học mới", description = "Lưu bộ thẻ học được tạo thủ công hoặc từ AI vào cơ sở dữ liệu.")
+    @Operation(summary = "Lưu một Flashcard Set mới", description = "Lưu Flashcard Set được tạo thủ công hoặc từ AI vào cơ sở dữ liệu.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lưu thành công",
                     content = @Content(schema = @Schema(implementation = FlashcardSetResponse.class)))
@@ -66,7 +61,7 @@ public class FlashcardSetController {
     }
 
     @PutMapping("/{flashcardSetId}")
-    @Operation(summary = "Cập nhật một bộ thẻ học", description = "Cập nhật thông tin và các thẻ trong một bộ đã có.")
+    @Operation(summary = "Cập nhật một Flashcard Set", description = "Cập nhật thông tin và các thẻ trong một bộ đã có.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cập nhật thành công",
                     content = @Content(schema = @Schema(implementation = FlashcardSetResponse.class))),
@@ -82,7 +77,7 @@ public class FlashcardSetController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Lấy chi tiết một bộ thẻ học", description = "Lấy thông tin đầy đủ của một bộ thẻ. Cần access token cho bộ thẻ ẩn.")
+    @Operation(summary = "Lấy chi tiết một Flashcard Set", description = "Lấy thông tin đầy đủ của một bộ thẻ. Cần access token cho bộ thẻ ẩn.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công",
                     content = @Content(schema = @Schema(implementation = FlashcardSetResponse.class))),
@@ -97,7 +92,7 @@ public class FlashcardSetController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Xóa một bộ thẻ học", description = "Chỉ chủ sở hữu mới có quyền xóa.")
+    @Operation(summary = "Xóa một Flashcard Set", description = "Chỉ chủ sở hữu mới có quyền xóa.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Xóa thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền xóa"),
@@ -124,7 +119,7 @@ public class FlashcardSetController {
     }
 
     @GetMapping("/all")
-    @Operation(summary = "Lấy tất cả bộ thẻ học công khai", description = "Lấy danh sách các bộ thẻ có thể truy cập (công khai, được mời).")
+    @Operation(summary = "Lấy tất cả Flashcard Set công khai", description = "Lấy danh sách các bộ thẻ có thể truy cập (công khai, được mời).")
     public ResponseEntity<List<FlashcardSetResponse>> getAllFlashcardSets() {
         List<FlashcardSetResponse> responses = flashcardSetService.getAllFlashcardSets();
         return ResponseEntity.ok(responses);
@@ -145,7 +140,7 @@ public class FlashcardSetController {
     }
 
     @PostMapping("/{flashcardSetId}/generate-quiz")
-    @Operation(summary = "Tạo quiz từ bộ thẻ học", description = "Dùng AI để tự động tạo một bài kiểm tra trắc nghiệm từ các thẻ trong bộ.")
+    @Operation(summary = "Tạo quiz từ Flashcard Set", description = "Dùng AI để tự động tạo một bài kiểm tra trắc nghiệm từ các thẻ trong bộ.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Tạo quiz thành công",
                     content = @Content(schema = @Schema(implementation = SimplifiedQuizSetResponse.class))),
@@ -161,7 +156,7 @@ public class FlashcardSetController {
     }
 
     @PostMapping("/{id}/invite")
-    @Operation(summary = "Mời người dùng vào bộ thẻ học", description = "Chủ sở hữu mời người dùng khác vào xem hoặc chỉnh sửa bộ thẻ riêng tư.")
+    @Operation(summary = "Mời người dùng vào Flashcard Set", description = "Chủ sở hữu mời người dùng khác vào xem hoặc chỉnh sửa bộ thẻ riêng tư.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mời thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền mời"),

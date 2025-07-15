@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.io.response.paged.PagedNotificationResponse;
-import com.example.demo.service.impl.NotificationService;
+import com.example.demo.service.intface.INotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "api")
 @Tag(name = "6. Notification Management")
 public class NotificationController {
-    private final NotificationService notificationService;
+    private final INotificationService notificationService;
 
     @GetMapping("/unread")
     @Operation(summary = "Lấy danh sách thông báo chưa đọc", description = "Lấy danh sách các thông báo chưa đọc của người dùng đang đăng nhập, có phân trang.")

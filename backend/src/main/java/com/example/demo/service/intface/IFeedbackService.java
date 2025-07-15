@@ -6,6 +6,6 @@ import com.example.demo.model.io.response.paged.PagedFeedbackResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface IFeedbackService {
-    FeedbackResponse createFeedback(CreateFeedbackRequest request);
+    FeedbackResponse createFeedback(CreateFeedbackRequest request, Long userId);
     PagedFeedbackResponse getAllFeedback(Pageable pageable);
 }

@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.model.io.request.CreateFeedbackRequest;
 import com.example.demo.model.io.response.object.FeedbackResponse;
 import com.example.demo.model.io.response.paged.PagedFeedbackResponse;
+import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IFeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class FeedbackController {
 
     private final IFeedbackService feedbackService;
+    private final IAccountService accountService;
 
     @PostMapping
     @Operation(summary = "Gửi feedback", description = "Cho phép người dùng (cả đã đăng nhập và ẩn danh) gửi feedback về ứng dụng.")
@@ -34,7 +36,8 @@ public class FeedbackController {
             @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ")
     })
     public ResponseEntity<FeedbackResponse> createFeedback(@Valid @RequestBody CreateFeedbackRequest request) {
-        FeedbackResponse response = feedbackService.createFeedback(request);
+        Long userId = accountService.getCurrentAccount().getUser().getId();
+        FeedbackResponse response = feedbackService.createFeedback(request, userId);
         return ResponseEntity.ok(response);
     }
 
