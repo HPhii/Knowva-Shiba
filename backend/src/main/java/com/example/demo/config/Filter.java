@@ -3,6 +3,7 @@ package com.example.demo.config;
 import com.example.demo.exception.AccountBannedException;
 import com.example.demo.model.entity.Account;
 import com.example.demo.exception.AuthException;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.example.demo.service.intface.ITokenService;
 import io.jsonwebtoken.Claims;
@@ -55,8 +56,7 @@ public class Filter extends OncePerRequestFilter {
             "/api/flashcard-sets/all",
             "/api/flashcard-sets/{id}",
             "/api/flashcard-sets/category/{category}",
-            "/api/feedback",
-            "/api/bug-reports"
+            "/api/feedback"
     );
 
     private final List<String> VERIFIED_EMAIL_PERMISSION = List.of(
@@ -152,7 +152,7 @@ public class Filter extends OncePerRequestFilter {
                 return;
             }
 
-            if (checkRequiresVerifiedEmail(uri) && !Boolean.TRUE.equals(account.getIsVerified())) {
+            if (checkRequiresVerifiedEmail(uri) && !Boolean.TRUE.equals(account.getIsVerified()) && account.getRole() == Role.ADMIN) {
                 handlerExceptionResolver.resolveException(request, response, null,
                         new AuthException("Email verification required"));
                 return;

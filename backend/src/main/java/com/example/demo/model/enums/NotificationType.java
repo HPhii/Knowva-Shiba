@@ -4,5 +4,6 @@ public enum NotificationType {
     QUIZ_INVITE,
     FLASHCARD_INVITE,
     SYSTEM_ALERT,
-    REMINDER;
+    REMINDER,
+    BUG_REPORT,
 }

@@ -2,11 +2,14 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.NotificationMapper;
+import com.example.demo.model.entity.Account;
 import com.example.demo.model.entity.Notification;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.NotificationType;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.io.response.object.NotificationResponse;
 import com.example.demo.model.io.response.paged.PagedNotificationResponse;
+import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IAccountService;
@@ -26,6 +29,7 @@ public class NotificationService implements INotificationService {
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     private final NotificationMapper notificationMapper;
     private final IAccountService accountService;
 
@@ -43,12 +47,25 @@ public class NotificationService implements INotificationService {
                 .isRead(false)
                 .build();
 
-        notificationRepository.save(notification);
+        Notification savedNotification = notificationRepository.save(notification);
 
-        // Gửi thông báo qua WebSocket
-        System.out.println("Sending notification to /topic/notifications/" + userId);
-        messagingTemplate.convertAndSend("/topic/notifications/" + userId, notification);
-        return notificationMapper.toNotificationResponse(notification);
+        NotificationResponse notificationResponse = notificationMapper.toNotificationResponse(savedNotification);
+
+        System.out.println("Sending notification DTO to /topic/notifications/" + userId);
+        messagingTemplate.convertAndSend("/topic/notifications/" + userId, notificationResponse);
+
+        return notificationResponse;
+    }
+
+    @Override
+    public void createNotificationForAdmins(NotificationType type, String message, Long setId) {
+        List<Account> adminAccounts = accountRepository.findByRole(Role.ADMIN);
+
+        for (Account adminAccount : adminAccounts) {
+            if (adminAccount.getUser() != null) {
+                createNotification(adminAccount.getUser().getId(), type, message, setId);
+            }
+        }
     }
 
     @Override

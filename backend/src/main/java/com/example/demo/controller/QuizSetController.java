@@ -38,14 +38,9 @@ public class QuizSetController {
     private final IAccountService accountService;
 
     @PostMapping(value = "/generate", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    @Operation(summary = "Tạo bộ câu hỏi từ AI", description = "Tải lên văn bản hoặc file (PDF, hình ảnh) để AI tự động tạo ra một bộ câu hỏi trắc nghiệm.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Tạo thành công, trả về bộ câu hỏi đã được đơn giản hóa",
-                    content = @Content(schema = @Schema(implementation = SimplifiedQuizSetResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Dữ liệu đầu vào không hợp lệ")
-    })
+    @Operation(summary = "Tạo Quiz Set từ AI (POSTMAN)", description = "Tải lên văn bản hoặc file (PDF, hình ảnh) để AI tự động tạo ra một Quiz Set trắc nghiệm.")
     public ResponseEntity<SimplifiedQuizSetResponse> generateQuizSet(
-            @Parameter(description = "Đối tượng chứa thông tin cài đặt cho bộ câu hỏi") @RequestPart("quizSet") CreateQuizSetRequest quizSetRequest,
+            @Parameter(description = "Đối tượng chứa thông tin cài đặt cho Quiz Set") @RequestPart("quizSet") CreateQuizSetRequest quizSetRequest,
             @Parameter(description = "Danh sách các file (ảnh, pdf) để AI phân tích") @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @Parameter(description = "Đoạn văn bản để AI phân tích") @RequestPart(value = "text", required = false) String inputText) {
         SimplifiedQuizSetResponse response = quizSetService.generateQuizSet(quizSetRequest, files, inputText);
@@ -53,7 +48,7 @@ public class QuizSetController {
     }
 
     @PostMapping("/save")
-    @Operation(summary = "Lưu một bộ câu hỏi mới", description = "Lưu một bộ câu hỏi được tạo thủ công hoặc từ AI vào cơ sở dữ liệu.")
+    @Operation(summary = "Lưu một Quiz Set mới", description = "Lưu một Quiz Set được tạo thủ công hoặc từ AI vào cơ sở dữ liệu.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lưu thành công",
                     content = @Content(schema = @Schema(implementation = QuizSetResponse.class)))
@@ -64,7 +59,7 @@ public class QuizSetController {
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Lấy các bộ câu hỏi của một người dùng", description = "Lấy danh sách tất cả các bộ câu hỏi do một người dùng cụ thể tạo ra.")
+    @Operation(summary = "Lấy các Quiz Set của một người dùng", description = "Lấy danh sách tất cả các Quiz Set do một người dùng cụ thể tạo ra.")
     public ResponseEntity<List<QuizSetResponse>> getQuizSetsOfUser(
             @Parameter(description = "ID của người dùng") @PathVariable Long userId) {
         List<QuizSetResponse> responses = quizSetService.getQuizSetsOfUser(userId);
@@ -72,7 +67,7 @@ public class QuizSetController {
     }
 
     @GetMapping("/my-quiz-sets")
-    @Operation(summary = "Lấy các bộ câu hỏi của tôi", description = "Lấy danh sách tất cả các bộ câu hỏi do người dùng đang đăng nhập tạo ra.")
+    @Operation(summary = "Lấy các Quiz Set của tôi", description = "Lấy danh sách tất cả các Quiz Set do người dùng đang đăng nhập tạo ra.")
     public ResponseEntity<List<QuizSetResponse>> getMyQuizSets() {
         User currentUser = accountService.getCurrentAccount().getUser();
         List<QuizSetResponse> responses = quizSetService.getQuizSetsOfUser(currentUser.getId());
@@ -80,33 +75,33 @@ public class QuizSetController {
     }
 
     @GetMapping("/all")
-    @Operation(summary = "Lấy tất cả bộ câu hỏi công khai", description = "Lấy danh sách tất cả các bộ câu hỏi có thể truy cập (công khai, hoặc được mời).")
+    @Operation(summary = "Lấy tất cả Quiz Set công khai", description = "Lấy danh sách tất cả các Quiz Set có thể truy cập (công khai, hoặc được mời).")
     public ResponseEntity<List<QuizSetResponse>> getAllQuizSets() {
         List<QuizSetResponse> responses = quizSetService.getAllQuizSets();
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Lấy chi tiết một bộ câu hỏi bằng ID", description = "Lấy thông tin đầy đủ của một bộ câu hỏi. Đối với bộ câu hỏi ẩn, cần có access token.")
+    @Operation(summary = "Lấy chi tiết một Quiz Set bằng ID", description = "Lấy thông tin đầy đủ của một Quiz Set. Đối với Quiz Set ẩn, cần có access token.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công",
                     content = @Content(schema = @Schema(implementation = QuizSetResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền truy cập"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ câu hỏi")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Quiz Set")
     })
     public ResponseEntity<QuizSetResponse> getQuizSetById(
-            @Parameter(description = "ID của bộ câu hỏi") @PathVariable Long id,
-            @Parameter(description = "Access token cho các bộ câu hỏi có link mới xem được (visibility = HIDDEN)") @RequestParam(required = false) String token) {
+            @Parameter(description = "ID của Quiz Set") @PathVariable Long id,
+            @Parameter(description = "Access token cho các Quiz Set có link mới xem được (visibility = HIDDEN)") @RequestParam(required = false) String token) {
         QuizSetResponse response = quizSetService.getQuizSetById(id, token);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Xóa một bộ câu hỏi", description = "Chỉ chủ sở hữu mới có quyền xóa bộ câu hỏi của mình.")
+    @Operation(summary = "Xóa một Quiz Set", description = "Chỉ chủ sở hữu mới có quyền xóa Quiz Set của mình.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Xóa thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền xóa"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ câu hỏi")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Quiz Set")
     })
     public ResponseEntity<QuizSetResponse> deleteQuizSetById(@PathVariable Long id) {
         QuizSetResponse response = quizSetService.deleteQuizSetById(id);
@@ -114,39 +109,39 @@ public class QuizSetController {
     }
 
     @PutMapping("/{quizSetId}")
-    @Operation(summary = "Cập nhật một bộ câu hỏi", description = "Cập nhật thông tin và các câu hỏi của một bộ câu hỏi đã có.")
+    @Operation(summary = "Cập nhật một Quiz Set", description = "Cập nhật thông tin và các câu hỏi của một Quiz Set đã có.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cập nhật thành công",
                     content = @Content(schema = @Schema(implementation = QuizSetResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền chỉnh sửa"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ câu hỏi hoặc câu hỏi con")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Quiz Set hoặc câu hỏi con")
     })
     public ResponseEntity<QuizSetResponse> updateQuizSet(
-            @Parameter(description = "ID của bộ câu hỏi cần cập nhật") @PathVariable Long quizSetId,
+            @Parameter(description = "ID của Quiz Set cần cập nhật") @PathVariable Long quizSetId,
             @RequestBody UpdateQuizSetRequest request,
-            @Parameter(description = "Access token nếu cần để chỉnh sửa bộ câu hỏi ẩn") @RequestParam(required = false) String token) {
+            @Parameter(description = "Access token nếu cần để chỉnh sửa Quiz Set ẩn") @RequestParam(required = false) String token) {
         QuizSetResponse response = quizSetService.updateQuizSet(quizSetId, request, token);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/invite")
-    @Operation(summary = "Mời người dùng vào bộ câu hỏi", description = "Chủ sở hữu mời một người dùng khác vào xem hoặc chỉnh sửa bộ câu hỏi riêng tư.")
+    @Operation(summary = "Mời người dùng vào Quiz Set", description = "Chủ sở hữu mời một người dùng khác vào xem hoặc chỉnh sửa Quiz Set riêng tư.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mời thành công"),
             @ApiResponse(responseCode = "403", description = "Chỉ chủ sở hữu mới có quyền mời"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ câu hỏi hoặc người được mời")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Quiz Set hoặc người được mời")
     })
     public ResponseEntity<String> inviteUserToQuizSet(
-            @Parameter(description = "ID của bộ câu hỏi") @PathVariable Long id,
+            @Parameter(description = "ID của Quiz Set") @PathVariable Long id,
             @RequestBody InviteUserRequest request) {
         quizSetService.inviteUserToQuizSet(id, request.getUserId(), request.getPermission());
         return ResponseEntity.ok("User invited successfully");
     }
 
     @GetMapping("/category/{category}")
-    @Operation(summary = "Lấy các bộ câu hỏi theo danh mục", description = "Lấy danh sách các bộ câu hỏi công khai thuộc một danh mục cụ thể.")
+    @Operation(summary = "Lấy các Quiz Set theo category", description = "Lấy danh sách các Quiz Set công khai thuộc một category cụ thể.")
     public ResponseEntity<List<QuizSetResponse>> getQuizSetsByCategory(
-            @Parameter(description = "Tên danh mục") @PathVariable Category category) {
+            @Parameter(description = "Tên category") @PathVariable Category category) {
         List<QuizSetResponse> responses = quizSetService.getQuizSetsByCategory(category);
         return ResponseEntity.ok(responses);
     }

@@ -60,7 +60,7 @@ public class SearchController {
     }
 
     @GetMapping("/accounts")
-    @Operation(summary = "Tìm kiếm tài khoản người dùng", description = "Tìm kiếm tài khoản người dùng dựa trên username hoặc email.")
+    @Operation(summary = "Tìm kiếm account", description = "Tìm kiếm account dựa trên username hoặc email.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Tìm kiếm thành công, trả về danh sách tài khoản",
                     content = @Content(schema = @Schema(implementation = PagedAccountResponse.class))),

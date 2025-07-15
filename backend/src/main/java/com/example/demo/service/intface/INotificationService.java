@@ -12,4 +12,5 @@ public interface INotificationService {
     void markAsRead(Long notificationId);
     void markAllAsRead(Long userId);
     void createSystemNotification(NotificationType type, String message, Long setId);
+    void createNotificationForAdmins(NotificationType type, String message, Long setId);
 }

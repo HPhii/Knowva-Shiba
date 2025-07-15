@@ -24,11 +24,11 @@ public class FeedbackService implements IFeedbackService {
     private final FeedbackMapper feedbackMapper;
 
     @Override
-    public FeedbackResponse createFeedback(CreateFeedbackRequest request) {
+    public FeedbackResponse createFeedback(CreateFeedbackRequest request, Long userId) {
         User user = null;
-        if (request.getUserId() != null) {
-            user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.getUserId()));
+        if (userId != null) {
+            user = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
         }
 
         Feedback feedback = Feedback.builder()

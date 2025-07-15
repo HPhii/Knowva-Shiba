@@ -9,4 +9,5 @@ import lombok.*;
 public class CreateReplyRequest {
     @NotBlank(message = "Reply message cannot be blank")
     private String message;
+    private Long parentId;
 }
