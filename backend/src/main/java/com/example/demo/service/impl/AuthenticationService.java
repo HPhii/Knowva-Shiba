@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
     private static final String WELCOME_SUBJECT = "ABC";
-    private static final String WELCOME_TEMPLATE = "welcome-template";
+    private static final String WELCOME_TEMPLATE = "welcome.html";
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;

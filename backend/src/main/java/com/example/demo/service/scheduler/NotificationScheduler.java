@@ -52,7 +52,6 @@ public class NotificationScheduler {
 
     private void sendNotificationEmail(User user, List<FlashcardProgress> flashcards) {
         String subject = "Flashcards đến hạn ôn tập";
-        String templateName = "flashcard-notification";
 
         Map<String, Object> contextVariables = new HashMap<>();
         contextVariables.put("userName", user.getFullName());
@@ -63,7 +62,7 @@ public class NotificationScheduler {
         emailDetails.setSubject(subject);
 
         try {
-            emailService.sendMail(emailDetails, templateName, contextVariables);
+            emailService.sendMail(emailDetails, "reminder.html", contextVariables);
         } catch (MessagingException e) {
             System.out.println("Error when sending email for user:" + user.getId());
         }
