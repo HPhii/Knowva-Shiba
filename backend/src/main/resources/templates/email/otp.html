@@ -2,6 +2,7 @@
     <h1>Xác thực tài khoản của bạn</h1>
     <p>Xin chào <strong th:text="${name}">Người dùng</strong>,</p>
     <p>Vui lòng sử dụng mã OTP dưới đây để hoàn tất quá trình xác thực. Mã có hiệu lực trong <strong th:text="${exptime}">15</strong> phút.</p>
+    <p style="text-align: center;">Bạn có thể nhấn giữ hoặc bôi đen mã số bên dưới để sao chép.</p>
     <div align="center">
         <span class="otp-code" th:text="${otp}">123456</span>
     </div>

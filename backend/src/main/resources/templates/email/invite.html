@@ -6,7 +6,9 @@
         <strong th:text="${setType == 'Flashcard' ? 'thẻ học' : 'câu hỏi'}">học liệu</strong>
         với tiêu đề:
     </p>
-    <h2 style="color: #005c29; text-align: center;" th:text="${setName}">Tiêu đề Set</h2>
+    <blockquote style="border-left: 4px solid #4CAF50; padding-left: 15px; margin-left: 0;">
+        <h2 style="color: #005c29; text-align: center; margin: 10px 0;" th:text="${setName}">Tiêu đề Set</h2>
+    </blockquote>
     <p>Quyền của bạn là: <strong th:text="${permission}">Xem</strong>.</p>
     <p>Hãy đăng nhập và chấp nhận lời mời để cùng nhau học tập nhé!</p>
     <a th:href="${'http://localhost:5173/set/' + setId}" class="button">Xem lời mời</a>
