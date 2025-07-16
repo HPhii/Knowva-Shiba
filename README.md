@@ -171,7 +171,7 @@ MySQL database initialization is handled by [`mysql-init/init.sql`](mysql-init/i
 
 - [ ] Add frontend (ReactJS) - planned for later implementation
 - [ ] Add API documentation
-- [ ] Add unit tests
+- [ ] Add unit tests and integration test
 - [ ] Add monitoring and logging
 
 ## 🤝 Contributing
