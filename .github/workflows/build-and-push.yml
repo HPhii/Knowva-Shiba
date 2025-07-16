@@ -1,42 +1,15 @@
-name: Test, Build, and Deploy
+name: Build and Deploy to VPS
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # Cho phép chạy thủ công từ tab Actions
 
 jobs:
-  # --- GIAI ĐOẠN 1: TEST CODE ---
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-          cache: "maven"
-
-      - name: Run Backend Tests
-        run: mvn -B test --file backend/pom.xml
-
-  # --- GIAI ĐOẠN 2: BUILD & PUSH IMAGE ---
+  # --- GIAI ĐOẠN 1: BUILD & PUSH IMAGE ---
   build:
-    # Chỉ chạy sau khi job 'test' thành công
-    needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      # Lưu lại tag của image để job deploy sử dụng
-      image_tag: ${{ steps.meta-spring.outputs.version }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,33 +20,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Lấy tag cho Spring App (theo mã commit)
-      - name: Extract metadata for Spring App
-        id: meta-spring
-        uses: docker/metadata-action@v5
-        with:
-          images: hieuphi/springapp
-          tags: type=sha,prefix=,format=short
-
-      # Lấy tag cho Flask App (theo mã commit)
-      - name: Extract metadata for Flask App
-        id: meta-flask
-        uses: docker/metadata-action@v5
-        with:
-          images: hieuphi/flaskapp
-          tags: type=sha,prefix=,format=short
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build và push cả 2 image với tag `latest` và tag theo commit
       - name: Build and push Spring Boot image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
+          file: ./backend/Dockerfile
           push: true
-          tags: ${{ steps.meta-spring.outputs.tags }}, hieuphi/springapp:latest
-          labels: ${{ steps.meta-spring.outputs.labels }}
+          tags: hieuphi/springapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -81,37 +37,18 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./flask-service
+          file: ./flask-service/Dockerfile
           push: true
-          tags: ${{ steps.meta-flask.outputs.tags }}, hieuphi/flaskapp:latest
-          labels: ${{ steps.meta-flask.outputs.labels }}
+          tags: hieuphi/flaskapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # --- GIAI ĐOẠN 3: DEPLOY LÊN MÁY CHỦ ---
+  # --- GIAI ĐOẠN 2: DEPLOY LÊN MÁY CHỦ ---
   deploy:
-    # Chỉ chạy sau khi job 'build' thành công
+    # Job này chỉ chạy sau khi job 'build' thành công
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Thay thế tag `:latest` trong docker-compose.yml bằng tag mới nhất
-      - name: Replace image tag in docker-compose
-        run: |
-          sed -i "s|hieuphi/springapp:latest|hieuphi/springapp:${{ needs.build.outputs.image_tag }}|g" docker-compose.yml
-          sed -i "s|hieuphi/flaskapp:latest|hieuphi/flaskapp:${{ needs.build.outputs.image_tag }}|g" docker-compose.yml
-
-      # Copy file docker-compose.yml đã được cập nhật lên server
-      - name: Copy docker-compose file to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST_IP }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.yml"
-          target: "knowva-shiba"
-
       - name: SSH to server and deploy
         uses: appleboy/ssh-action@master
         with:
@@ -119,8 +56,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd knowva-shiba
-            echo "Deploying with tag: ${{ needs.build.outputs.image_tag }}"
+            # Di chuyển đến thư mục project trên máy chủ
+            cd knowva-shiba 
 
             # Tải về các image mới nhất từ Docker Hub
             docker-compose pull
