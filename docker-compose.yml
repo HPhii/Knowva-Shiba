@@ -70,6 +70,7 @@ services:
       - "8080:8080"
     networks:
       - backend
+    mem_limit: 2g
 
   flask_app:
     image: hieuphi/flaskapp:latest
@@ -86,6 +87,7 @@ services:
       - "5000:5000"
     networks:
       - backend
+    mem_limit: 512m
 
 volumes:
   mysql_data:
