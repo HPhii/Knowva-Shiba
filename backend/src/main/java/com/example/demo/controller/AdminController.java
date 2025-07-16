@@ -18,8 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -95,12 +99,26 @@ public class AdminController {
     }
 
     @GetMapping("/transactions")
-    @Operation(summary = "Lấy tất cả lịch sử giao dịch", description = "Lấy danh sách toàn bộ các giao dịch đã được thực hiện trên hệ thống.")
+    @Operation(summary = "Lấy tất cả lịch sử giao dịch", description = "Lấy danh sách toàn bộ các giao dịch trên hệ thống với khả năng lọc và phân trang.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
     })
-    public ResponseEntity<List<PaymentTransaction>> getAllTransactions() {
-        return ResponseEntity.ok(paymentService.getAllTransactions());
+    public ResponseEntity<Page<PaymentTransaction>> getAllTransactions(
+            @Parameter(description = "Số trang (bắt đầu từ 0)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sắp xếp theo trường (vd: createdAt, amount)") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Thứ tự sắp xếp (ASC/DESC)") @RequestParam(defaultValue = "DESC") String sortDirection,
+            @Parameter(description = "Lọc theo ID người dùng") @RequestParam(required = false) Long userId,
+            @Parameter(description = "Lọc theo username người dùng") @RequestParam(required = false) String username,
+            @Parameter(description = "Lọc theo email người dùng") @RequestParam(required = false) String email,
+            @Parameter(description = "Lọc theo mã đơn hàng") @RequestParam(required = false) String orderCode,
+            @Parameter(description = "Lọc theo trạng thái giao dịch") @RequestParam(required = false) PaymentTransaction.TransactionStatus status
+    ) {
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<PaymentTransaction> transactions = paymentService.getAllTransactions(
+                userId, username, email, orderCode, status, pageable);
+        return ResponseEntity.ok(transactions);
     }
 }
