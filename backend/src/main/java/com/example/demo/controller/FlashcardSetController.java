@@ -42,7 +42,7 @@ public class FlashcardSetController {
     @PostMapping(value = "/generate", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @Operation(summary = "Tạo Flashcard Set từ AI (POSTMAN)", description = "Tải lên văn bản hoặc file để AI tự động tạo ra một Flashcard Set.")
     public ResponseEntity<SimplifiedFlashcardSetResponse> generateFlashcardSet(
-            @Parameter(description = "Thông tin cài đặt cho bộ thẻ") @RequestPart("flashcardSet") CreateFlashcardSetRequest flashcardSetRequest,
+            @Parameter(description = "Thông tin cài đặt cho Flashcard Set") @RequestPart("flashcardSet") CreateFlashcardSetRequest flashcardSetRequest,
             @Parameter(description = "Danh sách file để AI phân tích") @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @Parameter(description = "Đoạn văn bản để AI phân tích") @RequestPart(value = "text", required = false) String inputText) {
         SimplifiedFlashcardSetResponse response = flashcardSetService.generateFlashcardSet(flashcardSetRequest, files, inputText);
@@ -66,27 +66,27 @@ public class FlashcardSetController {
             @ApiResponse(responseCode = "200", description = "Cập nhật thành công",
                     content = @Content(schema = @Schema(implementation = FlashcardSetResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền chỉnh sửa"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set")
     })
     public ResponseEntity<FlashcardSetResponse> updateFlashcardSet(
-            @Parameter(description = "ID của bộ thẻ cần cập nhật") @PathVariable Long flashcardSetId,
+            @Parameter(description = "ID của Flashcard Set cần cập nhật") @PathVariable Long flashcardSetId,
             @RequestBody UpdateFlashcardSetRequest request,
-            @Parameter(description = "Access token cho bộ thẻ ẩn") @RequestParam(required = false) String token) {
+            @Parameter(description = "Access token cho Flashcard Set ẩn") @RequestParam(required = false) String token) {
         FlashcardSetResponse response = flashcardSetService.updateFlashcardSet(flashcardSetId, request, token);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Lấy chi tiết một Flashcard Set", description = "Lấy thông tin đầy đủ của một bộ thẻ. Cần access token cho bộ thẻ ẩn.")
+    @Operation(summary = "Lấy chi tiết một Flashcard Set", description = "Lấy thông tin đầy đủ của một Flashcard Set. Cần access token cho Flashcard Set ẩn.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công",
                     content = @Content(schema = @Schema(implementation = FlashcardSetResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền truy cập"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set")
     })
     public ResponseEntity<FlashcardSetResponse> getFlashcardSetById(
-            @Parameter(description = "ID của bộ thẻ") @PathVariable Long id,
-            @Parameter(description = "Access token cho bộ thẻ ẩn") @RequestParam(required = false) String token) {
+            @Parameter(description = "ID của Flashcard Set") @PathVariable Long id,
+            @Parameter(description = "Access token cho Flashcard Set ẩn") @RequestParam(required = false) String token) {
         FlashcardSetResponse response = flashcardSetService.getFlashcardSetById(id, token);
         return ResponseEntity.ok(response);
     }
@@ -96,7 +96,7 @@ public class FlashcardSetController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Xóa thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền xóa"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set")
     })
     public ResponseEntity<FlashcardSetResponse> deleteFlashcardSetById(@PathVariable Long id) {
         FlashcardSetResponse response = flashcardSetService.deleteFlashcardSetById(id);
@@ -104,14 +104,14 @@ public class FlashcardSetController {
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Lấy các bộ thẻ của một người dùng", description = "Lấy danh sách các bộ thẻ do một người dùng cụ thể tạo ra.")
+    @Operation(summary = "Lấy các Flashcard Set của một người dùng", description = "Lấy danh sách các Flashcard Set do một người dùng cụ thể tạo ra.")
     public ResponseEntity<List<FlashcardSetResponse>> getFlashcardSetsOfUser(@Parameter(description = "ID của người dùng") @PathVariable Long userId) {
         List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsOfUser(userId);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/my-flashcard-sets")
-    @Operation(summary = "Lấy các bộ thẻ của tôi", description = "Lấy danh sách các bộ thẻ do người dùng đang đăng nhập tạo ra.")
+    @Operation(summary = "Lấy các Flashcard Set của tôi", description = "Lấy danh sách các Flashcard Set do người dùng đang đăng nhập tạo ra.")
     public ResponseEntity<List<FlashcardSetResponse>> getMyFlashcardSets() {
         User currentUser = accountService.getCurrentAccount().getUser();
         List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsOfUser(currentUser.getId());
@@ -119,7 +119,7 @@ public class FlashcardSetController {
     }
 
     @GetMapping("/all")
-    @Operation(summary = "Lấy tất cả Flashcard Set công khai", description = "Lấy danh sách các bộ thẻ có thể truy cập (công khai, được mời).")
+    @Operation(summary = "Lấy tất cả Flashcard Set công khai", description = "Lấy danh sách các Flashcard Set có thể truy cập (công khai, được mời).")
     public ResponseEntity<List<FlashcardSetResponse>> getAllFlashcardSets() {
         List<FlashcardSetResponse> responses = flashcardSetService.getAllFlashcardSets();
         return ResponseEntity.ok(responses);
@@ -130,10 +130,10 @@ public class FlashcardSetController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Chấm điểm thành công",
                     content = @Content(schema = @Schema(implementation = ExamModeFeedbackResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ hoặc thẻ")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set hoặc thẻ")
     })
     public ResponseEntity<ExamModeFeedbackResponse> submitExamMode(
-            @Parameter(description = "ID của bộ thẻ") @PathVariable Long flashcardSetId,
+            @Parameter(description = "ID của Flashcard Set") @PathVariable Long flashcardSetId,
             @RequestBody SubmitExamModeRequest request) {
         ExamModeFeedbackResponse response = flashcardSetService.submitExamMode(flashcardSetId, request);
         return ResponseEntity.ok(response);
@@ -144,10 +144,10 @@ public class FlashcardSetController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Tạo quiz thành công",
                     content = @Content(schema = @Schema(implementation = SimplifiedQuizSetResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set")
     })
     public ResponseEntity<SimplifiedQuizSetResponse> generateQuizMode(
-            @Parameter(description = "ID của bộ thẻ") @PathVariable Long flashcardSetId,
+            @Parameter(description = "ID của Flashcard Set") @PathVariable Long flashcardSetId,
             @Parameter(description = "Ngôn ngữ cho câu hỏi") @RequestParam(defaultValue = "en") String language,
             @Parameter(description = "Loại câu hỏi (MULTIPLE_CHOICE, TRUE_FALSE, MIXED)") @RequestParam(defaultValue = "MULTIPLE_CHOICE") String questionType,
             @Parameter(description = "Số lượng câu hỏi tối đa") @RequestParam(defaultValue = "5") int maxQuestions) {
@@ -156,21 +156,21 @@ public class FlashcardSetController {
     }
 
     @PostMapping("/{id}/invite")
-    @Operation(summary = "Mời người dùng vào Flashcard Set", description = "Chủ sở hữu mời người dùng khác vào xem hoặc chỉnh sửa bộ thẻ riêng tư.")
+    @Operation(summary = "Mời người dùng vào Flashcard Set", description = "Chủ sở hữu mời người dùng khác vào xem hoặc chỉnh sửa Flashcard Set riêng tư.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Mời thành công"),
             @ApiResponse(responseCode = "403", description = "Không có quyền mời"),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy bộ thẻ hoặc người được mời")
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy Flashcard Set hoặc người được mời")
     })
     public ResponseEntity<String> inviteUserToFlashcardSet(
-            @Parameter(description = "ID của bộ thẻ") @PathVariable Long id,
+            @Parameter(description = "ID của Flashcard Set") @PathVariable Long id,
             @RequestBody InviteUserRequest request) {
         flashcardSetService.inviteUserToFlashcardSet(id, request.getUserId(), request.getPermission());
         return ResponseEntity.ok("User invited successfully");
     }
 
     @GetMapping("/category/{category}")
-    @Operation(summary = "Lấy các bộ thẻ theo danh mục", description = "Lấy danh sách các bộ thẻ công khai thuộc một danh mục.")
+    @Operation(summary = "Lấy các Flashcard Set theo danh mục", description = "Lấy danh sách các Flashcard Set công khai thuộc một danh mục.")
     public ResponseEntity<List<FlashcardSetResponse>> getFlashcardSetsByCategory(
             @Parameter(description = "Tên danh mục") @PathVariable Category category) {
         List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsByCategory(category);

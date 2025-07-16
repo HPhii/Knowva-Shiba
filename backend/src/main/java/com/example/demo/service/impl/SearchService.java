@@ -9,11 +9,8 @@ import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.entity.quiz.QuizAccessControl;
 import com.example.demo.model.entity.quiz.QuizSet;
-import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.io.response.object.AccountResponse;
-import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
-import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.paged.PagedAccountResponse;
 import com.example.demo.model.io.response.paged.PagedFlashcardSetResponse;
 import com.example.demo.model.io.response.paged.PagedQuizSetResponse;
@@ -60,7 +57,7 @@ public class SearchService implements ISearchService {
         // Create a new page with the filtered results
         Page<QuizSet> filteredPage = new PageImpl<>(
                 filteredQuizSets, 
-                pageable, 
+                pageable,
                 filteredQuizSets.size() // This is not ideal for pagination, but works for filtering results
         );
 

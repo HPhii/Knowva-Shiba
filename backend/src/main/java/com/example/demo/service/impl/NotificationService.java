@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import com.example.demo.specification.NotificationSpecification;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,25 +71,38 @@ public class NotificationService implements INotificationService {
     }
 
     @Override
-    public PagedNotificationResponse getUnreadNotifications(Pageable pageable) {
+    public PagedNotificationResponse getNotifications(Boolean isRead, NotificationType type, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         Long userId = accountService.getCurrentAccount().getUser().getId();
 
-        Page<Notification> notificationsPage = notificationRepository.findByUser_IdAndIsReadFalse(userId, pageable);
+        Specification<Notification> spec = Specification.where(NotificationSpecification.withUserId(userId));
+
+        if (isRead != null) {
+            spec = spec.and(NotificationSpecification.withIsRead(isRead));
+        }
+        if (type != null) {
+            spec = spec.and(NotificationSpecification.withType(type));
+        }
+        if (startDate != null) {
+            spec = spec.and(NotificationSpecification.withTimestampAfter(startDate));
+        }
+        if (endDate != null) {
+            spec = spec.and(NotificationSpecification.withTimestampBefore(endDate));
+        }
+
+        Page<Notification> notificationsPage = notificationRepository.findAll(spec, pageable);
+
         if (notificationsPage.isEmpty()) {
-            throw new EntityNotFoundException("No unread notifications found for user with ID: " + userId);
+            throw new EntityNotFoundException("No notifications found for the given criteria.");
         }
 
         List<NotificationResponse> notificationResponses = notificationMapper.toNotificationResponseList(notificationsPage.getContent());
 
-        PagedNotificationResponse response = new PagedNotificationResponse(
+        return new PagedNotificationResponse(
                 notificationResponses,
                 notificationsPage.getTotalElements(),
                 notificationsPage.getTotalPages(),
                 notificationsPage.getNumber()
         );
-
-        messagingTemplate.convertAndSend("/topic/notifications/" + userId, response);
-        return response;
     }
 
     @Override
@@ -112,26 +127,6 @@ public class NotificationService implements INotificationService {
         notificationRepository.saveAll(notifications);
 
         messagingTemplate.convertAndSend("/topic/notifications/" + userId, notifications);
-    }
-
-    // get all notifications of current user
-    @Override
-    public PagedNotificationResponse getAllNotifications(Pageable pageable) {
-        Long userId = accountService.getCurrentAccount().getUser().getId();
-
-        Page<Notification> notificationsPage = notificationRepository.findByUser_Id(userId, pageable);
-        if (notificationsPage.isEmpty()) {
-            throw new EntityNotFoundException("No notifications found for user with ID: " + userId);
-        }
-
-        List<NotificationResponse> notificationResponses = notificationMapper.toNotificationResponseList(notificationsPage.getContent());
-
-        return new PagedNotificationResponse(
-                notificationResponses,
-                notificationsPage.getTotalElements(),
-                notificationsPage.getTotalPages(),
-                notificationsPage.getNumber()
-        );
     }
 
     @Override

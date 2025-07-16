@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
 import com.example.demo.model.io.response.object.UserProfileResponse;
@@ -20,6 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -37,18 +39,26 @@ public class UserController {
 
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "[ADMIN] Lấy danh sách người dùng", description = "Chỉ Admin có quyền. Lấy danh sách người dùng đã được phân trang và lọc theo trạng thái.")
+    @Operation(summary = "[ADMIN] Lấy danh sách người dùng", description = "Chỉ Admin có quyền. Lấy danh sách người dùng đã được phân trang và lọc theo trạng thái, quyền, và các thông tin khác.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công",
                     content = @Content(schema = @Schema(implementation = PagedUsersResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
     })
     public ResponseEntity<PagedUsersResponse> getAllUsers(
-            @Parameter(description = "Trạng thái tài khoản (ACTIVE, INACTIVE, BANNED)", required = true) @RequestParam Status status,
             @Parameter(description = "Số trang (bắt đầu từ 0)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Số lượng phần tử mỗi trang") @RequestParam(defaultValue = "8") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        PagedUsersResponse response = userService.getAllUsers(status, pageable);
+            @Parameter(description = "Số lượng phần tử mỗi trang") @RequestParam(defaultValue = "8") int size,
+            @Parameter(description = "Sắp xếp theo trường (vd: id, fullName)") @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Thứ tự sắp xếp (ASC/DESC)") @RequestParam(defaultValue = "ASC") String sortDirection,
+            @Parameter(description = "Lọc theo username") @RequestParam(required = false) String username,
+            @Parameter(description = "Lọc theo email") @RequestParam(required = false) String email,
+            @Parameter(description = "Lọc theo quyền (REGULAR, VIP, ADMIN)") @RequestParam(required = false) Role role,
+            @Parameter(description = "Lọc theo trạng thái tài khoản (ACTIVE, INACTIVE, BANNED)") @RequestParam(required = false) Status status,
+            @Parameter(description = "Lọc theo trạng thái xác thực email") @RequestParam(required = false) Boolean isVerified
+    ) {
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        PagedUsersResponse response = userService.getAllUsers(username, email, role, status, isVerified, pageable);
         return ResponseEntity.ok(response);
     }
 

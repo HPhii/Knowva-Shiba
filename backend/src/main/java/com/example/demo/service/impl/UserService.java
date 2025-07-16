@@ -2,12 +2,14 @@ package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
 import com.example.demo.model.io.response.object.UserProfileResponse;
 import com.example.demo.model.io.response.paged.PagedUsersResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IUserService;
+import com.example.demo.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,9 +31,27 @@ public class UserService implements IUserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     @Override
-    @Cacheable(value = "users", key = "#status + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedUsersResponse getAllUsers(Status status, Pageable pageable) {
-        Page<User> userPage = userRepository.findByAccount_Status(status, pageable);
+    @Cacheable(value = "users", key = "#username + '-' + #email + '-' + #role + '-' + #status + '-' + #isVerified + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+    public PagedUsersResponse getAllUsers(String username, String email, Role role, Status status, Boolean isVerified, Pageable pageable) {
+        Specification<User> spec = Specification.where(null);
+
+        if (username != null && !username.isBlank()) {
+            spec = spec.and(UserSpecification.withUsername(username));
+        }
+        if (email != null && !email.isBlank()) {
+            spec = spec.and(UserSpecification.withEmail(email));
+        }
+        if (role != null) {
+            spec = spec.and(UserSpecification.withRole(role));
+        }
+        if (status != null) {
+            spec = spec.and(UserSpecification.withStatus(status));
+        }
+        if (isVerified != null) {
+            spec = spec.and(UserSpecification.withVerified(isVerified));
+        }
+
+        Page<User> userPage = userRepository.findAll(spec, pageable);
         List<User> users = userPage.getContent();
 
         return new PagedUsersResponse(
@@ -69,7 +90,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    @CacheEvict(value = "userProfile", key = "#id")
+    @CacheEvict(value = {"userProfile", "users"}, allEntries = true)
     public User deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -79,7 +100,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    @CacheEvict(value = "userProfile", key = "#id")
+    @CacheEvict(value = {"userProfile", "users"}, allEntries = true)
     public UpdateUserProfileDTO updateUserProfile(Long id, UpdateUserProfileDTO updateUserProfileDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));

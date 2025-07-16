@@ -21,6 +21,10 @@ import vn.payos.type.CheckoutResponseData;
 import vn.payos.type.ItemData;
 import vn.payos.type.PaymentData;
 import vn.payos.type.PaymentLinkData;
+import com.example.demo.specification.PaymentTransactionSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -95,8 +99,26 @@ public class PaymentService implements IPaymentService {
     }
 
     @Override
-    public List<PaymentTransaction> getAllTransactions() {
-        return paymentTransactionRepository.findAll();
+    public Page<PaymentTransaction> getAllTransactions(Long userId, String username, String email, String orderCode, PaymentTransaction.TransactionStatus status, Pageable pageable) {
+        Specification<PaymentTransaction> spec = Specification.where(null);
+
+        if (userId != null) {
+            spec = spec.and(PaymentTransactionSpecification.withUserId(userId));
+        }
+        if (username != null && !username.isBlank()) {
+            spec = spec.and(PaymentTransactionSpecification.withUsername(username));
+        }
+        if (email != null && !email.isBlank()) {
+            spec = spec.and(PaymentTransactionSpecification.withEmail(email));
+        }
+        if (orderCode != null && !orderCode.isBlank()) {
+            spec = spec.and(PaymentTransactionSpecification.withOrderCode(orderCode));
+        }
+        if (status != null) {
+            spec = spec.and(PaymentTransactionSpecification.withStatus(status));
+        }
+
+        return paymentTransactionRepository.findAll(spec, pageable);
     }
 
     @Override
