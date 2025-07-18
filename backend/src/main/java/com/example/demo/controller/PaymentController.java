@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.io.request.CreatePaymentRequest;
 import com.example.demo.model.io.response.object.PaymentResponse;
 import com.example.demo.service.intface.IPaymentService;
@@ -71,11 +72,17 @@ public class PaymentController {
     }
 
     @PostMapping("/payos-webhook")
-    @Hidden // Ẩn API này khỏi Swagger UI vì đây là webhook do PayOS gọi.
+    @Hidden
     public ResponseEntity<String> payosWebhook(@RequestBody String webhookBody) {
         try {
             paymentService.handleWebhook(webhookBody);
             return ResponseEntity.ok("Webhook received");
+        } catch (EntityNotFoundException e) {
+            if (e.getMessage().contains("Transaction not found for order code")) {
+                System.out.println("Webhook verification request received and acknowledged.");
+                return ResponseEntity.ok("Webhook verification successful");
+            }
+            return ResponseEntity.status(400).body("Webhook processing failed: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(400).body("Webhook processing failed: " + e.getMessage());
         }
