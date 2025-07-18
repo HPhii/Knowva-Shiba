@@ -113,5 +113,10 @@ def generate_quiz_from_flashcards_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+    return jsonify({"error": "An unexpected internal server error occurred."}), 500
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

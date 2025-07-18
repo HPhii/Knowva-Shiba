@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AuthException;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.Account;
@@ -12,6 +13,7 @@ import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IEmailService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,15 +52,26 @@ public class AccountService implements IAccountService {
 
     @Override
     public Account getCurrentAccount() {
-        Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return accountRepository.findAccountById(currentAccount.getId());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            throw new AuthException("User is not authenticated");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof Account) {
+            Account currentAccount = (Account) principal;
+            return accountRepository.findById(currentAccount.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + currentAccount.getId()));
+        } else {
+            throw new IllegalStateException("Unexpected principal type: " + principal.getClass().getName());
+        }
     }
 
     @Override
     public AccountResponse getCurrentAccountResponse() {
-        Account currentAccount = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Account account = accountRepository.findAccountById(currentAccount.getId());
-
+        Account account = this.getCurrentAccount();
         return accountMapper.toAccountResponse(account);
     }
 

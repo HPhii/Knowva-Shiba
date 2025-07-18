@@ -78,17 +78,37 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(CorsUtils::isPreFlightRequest).permitAll() // Cho phép tất cả pre-flight requests
-                        .requestMatchers("/**").permitAll()
+                        .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/api/register",
+                                "/api/login",
+                                "/api/google",
+                                "/api/send-reset-otp",
+                                "/api/reset-password",
+                                "/api/payment/success",
+                                "/api/payment/cancel",
+                                "/api/payment/payos-webhook",
+                                "/api/search/**",
+                                "/api/quiz-sets/all",
+                                "/api/quiz-sets/{id}",
+                                "/api/quiz-sets/category/{category}",
+                                "/api/flashcard-sets/all",
+                                "/api/flashcard-sets/{id}",
+                                "/api/flashcard-sets/category/{category}",
+                                "/api/feedback"
+                        ).permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login") // Specify your login page
+                        .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // Custom user service
+                                .userService(customOAuth2UserService)
                         )
-                        .successHandler(this::oauth2SuccessHandler) // Custom success handler
+                        .successHandler(this::oauth2SuccessHandler)
                 )
                 .userDetailsService(userDetailsService)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
