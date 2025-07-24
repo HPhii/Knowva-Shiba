@@ -14,13 +14,14 @@ services:
     volumes:
       - ./mysql-init:/docker-entrypoint-initdb.d
       - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "mysql", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}", "-e", "SELECT 1 FROM information_schema.schemata WHERE schema_name='exe';"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   # 2. In-memory Cache - Redis
   redis:
@@ -32,13 +33,13 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - backend
 
   # 3. Kafka Zookeeper - Cần cho Kafka
   zookeeper:
@@ -103,10 +104,11 @@ services:
       - "8080:8080"
     networks:
       - backend
+    mem_limit: 2g
 
   # 6. AI Service - Flask
   flask-app:
-    image: hieuphi/flaskapp:latest # Sử dụng image bạn build từ Docker Hub
+    image: hieuphi/flaskapp:latest
     container_name: flask_prod_app
     restart: always
     environment:
@@ -118,6 +120,7 @@ services:
       - "5000:5000"
     networks:
       - backend
+    mem_limit: 512m
 
 # Volumes để lưu trữ dữ liệu bền bỉ
 volumes:

@@ -42,7 +42,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     depends_on:
-      - zookeeper
+      - zookeeper # Đảm bảo Zookeeper khởi động trước Kafka
     networks:
       - backend_network
 
