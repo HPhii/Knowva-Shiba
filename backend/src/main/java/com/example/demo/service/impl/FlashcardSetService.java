@@ -20,6 +20,7 @@ import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IEmailService;
 import com.example.demo.service.intface.INotificationService;
+import com.example.demo.service.kafka.EmailProducerService;
 import com.example.demo.service.template.FlashcardSetAIService;
 import com.example.demo.service.template.FlaskAIService;
 import com.example.demo.service.intface.IAccountService;
@@ -49,6 +50,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardAccessControlRepository flashcardAccessControlRepository;
     private final UserRepository userRepository;
     private final INotificationService notificationService;
+    private final EmailProducerService emailProducerService;
 
     @Override
     @Cacheable(value = "allFlashcardSets")
@@ -292,23 +294,23 @@ public class FlashcardSetService implements IFlashcardSetService {
         notificationService.createNotification(invitedUserId, NotificationType.FLASHCARD_INVITE, message, flashcardSetId);
 
         flashcardAccessControlRepository.save(accessControl);
-//
-//        String subject = "Bạn đã được mời vào FlashcardSet";
-//        String templateName = "invite-flashcard-set";
-//        Map<String, Object> contextVariables = new HashMap<>();
-//        contextVariables.put("userName", invitedUser.getFullName());
-//        contextVariables.put("flashcardSetTitle", flashcardSet.getTitle());
-//        contextVariables.put("permission", permission.name());
-//
-//        EmailDetails emailDetails = new EmailDetails();
-//        emailDetails.setReceiver(invitedUser.getAccount());
-//        emailDetails.setSubject(subject);
-//
-//        try {
-//            emailService.sendMail(emailDetails, templateName, contextVariables);
-//        } catch (MessagingException e) {
-//            System.out.println("Lỗi gửi email cho user: " + invitedUser.getId());
-//        }
+
+        String subject = "Bạn có lời mời học tập mới từ " + owner.getAccount().getUsername();
+        String templateName = "invite.html";
+
+        Map<String, Object> contextVariables = new HashMap<>();
+        contextVariables.put("invitedUserName", invitedUser.getFullName() != null ? invitedUser.getFullName() : invitedUser.getAccount().getUsername());
+        contextVariables.put("inviterName", owner.getFullName() != null ? owner.getFullName() : owner.getAccount().getUsername());
+        contextVariables.put("setType", "Flashcard");
+        contextVariables.put("setName", flashcardSet.getTitle());
+        contextVariables.put("permission", permission == Permission.EDIT ? "Chỉnh sửa" : "Xem");
+        contextVariables.put("setId", flashcardSet.getId());
+
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setReceiver(invitedUser.getAccount());
+        emailDetails.setSubject(subject);
+
+        emailProducerService.sendEmailEvent(emailDetails, templateName, contextVariables);
     }
 
     private void checkAccessPermission(FlashcardSet flashcardSet, User currentUser, String token, Permission requiredPermission) {
