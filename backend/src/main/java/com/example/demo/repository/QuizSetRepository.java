@@ -18,6 +18,7 @@ public interface QuizSetRepository extends JpaRepository<QuizSet, Long> {
     Optional<QuizSet> findByIdAndSourceType(Long id, SourceType sourceType);
     List<QuizSet> findAllByOwner_Id(Long userId);
     List<QuizSet> findAllByCategory(Category category);
+    long countByOwner_Id(Long ownerId);
     long countByCreatedAtAfter(LocalDateTime createdAtAfter);
 
     @Query(value = "SELECT * FROM quiz_sets WHERE MATCH(title, description) AGAINST (?1)",

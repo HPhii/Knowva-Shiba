@@ -15,6 +15,7 @@ import java.util.List;
 public interface FlashcardSetRepository extends JpaRepository<FlashcardSet, Long> {
     List<FlashcardSet> findAllByOwner_Id(Long ownerId);
     List<FlashcardSet> findAllByCategory(Category category);
+    long countByOwner_Id(Long ownerId);
     long countByCreatedAtAfter(LocalDateTime createdAtAfter);
 
     @Query(value = "SELECT * FROM flashcard_sets WHERE MATCH(title, description) AGAINST (?1)",
