@@ -9,26 +9,19 @@ import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.enums.*;
 import com.example.demo.model.io.request.flashcard.*;
-import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.FlashcardAccessControlRepository;
-import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.FlashcardSetRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.intface.IEmailService;
-import com.example.demo.service.intface.INotificationService;
-import com.example.demo.service.kafka.EmailProducerService;
+import com.example.demo.service.intface.*;
 import com.example.demo.service.template.FlashcardSetAIService;
 import com.example.demo.service.template.FlaskAIService;
-import com.example.demo.service.intface.IAccountService;
-import com.example.demo.service.intface.IFlashcardSetService;
 import com.example.demo.utils.InputValidationUtils;
 import com.example.demo.utils.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -50,7 +43,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final FlashcardAccessControlRepository flashcardAccessControlRepository;
     private final UserRepository userRepository;
     private final INotificationService notificationService;
-    private final EmailProducerService emailProducerService;
+    private final IInvitationEmailService invitationEmailService;
 
     @Override
     @Cacheable(value = "allFlashcardSets")
@@ -295,22 +288,14 @@ public class FlashcardSetService implements IFlashcardSetService {
 
         flashcardAccessControlRepository.save(accessControl);
 
-        String subject = "Bạn có lời mời học tập mới từ " + owner.getAccount().getUsername();
-        String templateName = "invite.html";
-
-        Map<String, Object> contextVariables = new HashMap<>();
-        contextVariables.put("invitedUserName", invitedUser.getFullName() != null ? invitedUser.getFullName() : invitedUser.getAccount().getUsername());
-        contextVariables.put("inviterName", owner.getFullName() != null ? owner.getFullName() : owner.getAccount().getUsername());
-        contextVariables.put("setType", "Flashcard");
-        contextVariables.put("setName", flashcardSet.getTitle());
-        contextVariables.put("permission", permission == Permission.EDIT ? "Chỉnh sửa" : "Xem");
-        contextVariables.put("setId", flashcardSet.getId());
-
-        EmailDetails emailDetails = new EmailDetails();
-        emailDetails.setReceiver(invitedUser.getAccount());
-        emailDetails.setSubject(subject);
-
-        emailProducerService.sendEmailEvent(emailDetails, templateName, contextVariables);
+        invitationEmailService.sendInvitationEmail(
+                owner,
+                invitedUser,
+                flashcardSet.getId(),
+                flashcardSet.getTitle(),
+                "Flashcard",
+                permission
+        );
     }
 
     private void checkAccessPermission(FlashcardSet flashcardSet, User currentUser, String token, Permission requiredPermission) {
