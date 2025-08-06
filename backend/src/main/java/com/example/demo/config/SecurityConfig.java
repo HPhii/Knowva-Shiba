@@ -42,6 +42,9 @@ public class SecurityConfig {
     @Value("${client.url}")
     private String clientUrl;
 
+    @Value("${server.url}")
+    private String serverUrl;
+
     @Bean // -> Biến function thành thư viện
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -62,7 +65,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(clientUrl));
+        configuration.setAllowedOrigins(List.of(clientUrl, serverUrl));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
