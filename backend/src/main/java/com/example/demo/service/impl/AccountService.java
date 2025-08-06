@@ -11,6 +11,7 @@ import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IEmailService;
+import com.example.demo.service.kafka.EmailProducerService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -25,9 +26,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AccountService implements IAccountService {
     private final AccountRepository accountRepository;
-    private final IEmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AccountMapper accountMapper;
+    private final EmailProducerService emailProducerService;
 
     @Override
     public void banUser(Long id) {
@@ -157,20 +158,16 @@ public class AccountService implements IAccountService {
 
         accountRepository.save(account);
 
-        try {
-            EmailDetails emailDetails = new EmailDetails();
-            emailDetails.setReceiver(account);
-            emailDetails.setSubject(subject);
+        EmailDetails emailDetails = new EmailDetails();
+        emailDetails.setReceiver(account);
+        emailDetails.setSubject(subject);
 
-            Map<String, Object> context = Map.of(
-                    "otp", otp,
-                    "name", account.getUsername(),
-                    "exptime", ((expirationTime - System.currentTimeMillis()) / (60 * 1000)) + 1
-            );
+        Map<String, Object> context = Map.of(
+                "otp", otp,
+                "name", account.getUsername(),
+                "exptime", ((expirationTime - System.currentTimeMillis()) / (60 * 1000)) + 1
+        );
 
-            emailService.sendMail(emailDetails, "otp.html", context);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send email", e);
-        }
+        emailProducerService.sendEmailEvent(emailDetails, "otp.html", context);
     }
 }

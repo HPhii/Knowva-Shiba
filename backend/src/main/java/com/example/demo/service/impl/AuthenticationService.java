@@ -17,13 +17,12 @@ import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IAuthenticationService;
-import com.example.demo.service.intface.IEmailService;
 import com.example.demo.service.intface.ITokenService;
+import com.example.demo.service.kafka.EmailProducerService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -47,10 +46,10 @@ public class AuthenticationService implements IAuthenticationService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-    private final IEmailService emailService;
     private final ITokenService tokenService;
     private final AuthenticationManager authenticationManager;
     private final AccountMapper accountMapper;
+    private final EmailProducerService emailProducerService;
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
@@ -81,30 +80,18 @@ public class AuthenticationService implements IAuthenticationService {
 
         Account newAccount = accountRepository.save(account);
 
-//        sendMail(newAccount);
-//        AccountResponse accountResponse = AccountResponse.builder()
-//                .accountId(newAccount.getId())
-//                .email(newAccount.getEmail())
-//                .username(newAccount.getUsername())
-//                .userId(newUser.getId())
-//                .isVerified(newAccount.getIsVerified())
-//                .build();
+        sendMail(newAccount);
 
 
         return accountMapper.toAccountResponse(newAccount);
     }
-
 
     private void sendMail(Account newAccount) {
         EmailDetails emailDetails = new EmailDetails();
         emailDetails.setReceiver(newAccount);
         emailDetails.setSubject(WELCOME_SUBJECT);
         Map<String, Object> welcomeContext = Map.of("name", emailDetails.getReceiver().getEmail());
-        try {
-            emailService.sendMail(emailDetails, WELCOME_TEMPLATE, welcomeContext);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-        }
+        emailProducerService.sendEmailEvent(emailDetails, WELCOME_TEMPLATE, welcomeContext);
     }
 
     @Override

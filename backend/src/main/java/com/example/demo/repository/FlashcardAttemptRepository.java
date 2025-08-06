@@ -16,4 +16,5 @@ public interface FlashcardAttemptRepository extends JpaRepository<FlashcardAttem
 
     @Query("SELECT DISTINCT fa.user.id FROM FlashcardAttempt fa WHERE fa.attemptDate > :date")
     List<Long> findUserIdsAfter(@Param("date") LocalDateTime date);
+    long countByUser_Id(Long userId);
 }

@@ -18,7 +18,9 @@ import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizAccessControlRepository;
 import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.IInvitationEmailService;
 import com.example.demo.service.intface.INotificationService;
+import com.example.demo.service.kafka.EmailProducerService;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
@@ -30,10 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,6 +45,8 @@ public class QuizSetService implements IQuizSetService {
     private final QuizAccessControlRepository quizAccessControlRepository;
     private final UserRepository userRepository;
     private final INotificationService notificationService;
+    private final EmailProducerService emailProducerService;
+    private final IInvitationEmailService invitationEmailService;
 
     @Override
     @CacheEvict(value = "quizSet", key = "#id")
@@ -252,6 +253,15 @@ public class QuizSetService implements IQuizSetService {
         String message = owner.getFullName() + " đã mời bạn vào set " + quizSet.getTitle() +
                 " để cùng học tập, ôn luyện và chinh phục kiến thức!";
         notificationService.createNotification(invitedUserId, NotificationType.QUIZ_INVITE, message, quizSetId);
+
+        invitationEmailService.sendInvitationEmail(
+                owner,
+                invitedUser,
+                quizSet.getId(),
+                quizSet.getTitle(),
+                "Quiz",
+                permission
+        );
 
         quizAccessControlRepository.save(accessControl);
     }
