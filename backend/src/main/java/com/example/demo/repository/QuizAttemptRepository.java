@@ -13,4 +13,5 @@ import java.util.List;
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> {
     @Query("SELECT DISTINCT qa.user.id FROM QuizAttempt qa WHERE qa.startedAt > :date")
     List<Long> findUserIdsAfter(@Param("date") LocalDateTime date);
+    List<QuizAttempt> findByUser_Id(Long userId);
 }

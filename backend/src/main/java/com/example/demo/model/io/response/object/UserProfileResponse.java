@@ -21,4 +21,5 @@ public class UserProfileResponse {
     private String email;
     private String avatarUrl;
     private Integer vipDaysLeft;
+    private UserStatsResponse stats;
 }
