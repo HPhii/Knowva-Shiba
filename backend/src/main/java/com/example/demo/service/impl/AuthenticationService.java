@@ -187,6 +187,11 @@ public class AuthenticationService implements IAuthenticationService {
             if (account.getStatus() == Status.BANNED) {
                 throw new AccountBannedException("Your account has been banned");
             }
+
+            if (!account.getIsVerified()) {
+                account.setIsVerified(true);
+                accountRepository.save(account);
+            }
         }
 
         String token = generateAndStoreToken(account);

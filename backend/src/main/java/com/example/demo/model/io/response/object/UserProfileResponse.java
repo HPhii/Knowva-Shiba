@@ -20,6 +20,7 @@ public class UserProfileResponse {
     private Gender gender;
     private String email;
     private String avatarUrl;
+    private Boolean isVerified;
     private Integer vipDaysLeft;
     private UserStatsResponse stats;
 }

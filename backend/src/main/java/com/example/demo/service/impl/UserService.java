@@ -112,6 +112,7 @@ public class UserService implements IUserService {
                 .phoneNumber(user.getPhoneNumber())
                 .gender(user.getGender())
                 .avatarUrl(user.getAvatarUrl())
+                .isVerified(user.getAccount().getIsVerified()) // <-- Thêm dòng này
                 .vipDaysLeft(vipDaysLeft)
                 .stats(stats)
                 .build();
