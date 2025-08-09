@@ -101,7 +101,13 @@ public class SecurityConfig {
                                 "/api/flashcard-sets/all",
                                 "/api/flashcard-sets/{id}",
                                 "/api/flashcard-sets/category/{category}",
-                                "/api/feedback"
+                                "/api/feedback",
+                                // Blog endpoints - public access for guests
+                                "/api/blog/posts",
+                                "/api/blog/posts/slug/**",
+                                "/api/blog/posts/{id}",
+                                "/api/blog/user/{userId}/posts",
+                                "/api/blog/categories"
                         ).permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated()

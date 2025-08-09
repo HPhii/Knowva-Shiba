@@ -45,15 +45,11 @@ public class BlogService implements IBlogService {
     private final UserRepository userRepository;
     private final BlogMapper blogMapper;
 
-    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
+    private static final Pattern NON_LATIN = Pattern.compile("[^\\w-]");
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
-
-    public String toSlug(String input) {
-        String nowhitespace = WHITESPACE.matcher(input).replaceAll("-");
-        String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
-        String slug = NONLATIN.matcher(normalized).replaceAll("");
-        return slug.toLowerCase(Locale.ENGLISH);
-    }
+    // Constants for read time calculation
+    private static final int AVERAGE_WORDS_PER_MINUTE = 200; // Average reading speed
+    private static final int EXCERPT_WORD_LIMIT = 30; // Number of words for auto-generated excerpt
 
     @Override
     public PagedBlogPostResponse getAllBlogPosts(BlogPostStatus status, Long categoryId, Long authorId, String keyword, Pageable pageable) {
@@ -107,16 +103,20 @@ public class BlogService implements IBlogService {
                 ? BlogPostStatus.DRAFT
                 : BlogPostStatus.PENDING_APPROVAL;
 
+        // Auto-generate excerpt and read time
+        String excerpt = generateExcerpt(request.getContent(), request.getExcerpt());
+        String readTime = calculateReadTime(request.getContent());
+
         BlogPost blogPost = BlogPost.builder()
                 .title(request.getTitle())
                 .slug(slug)
-                .excerpt(request.getExcerpt())
+                .excerpt(excerpt)
                 .content(request.getContent())
                 .author(author)
                 .category(category)
                 .status(initialStatus)
                 .imageUrl(request.getImageUrl())
-                .readTime(request.getReadTime())
+                .readTime(readTime)
                 .build();
 
         BlogPost savedBlogPost = blogPostRepository.save(blogPost);
@@ -133,11 +133,9 @@ public class BlogService implements IBlogService {
             throw new ForbiddenException("You do not have permission to edit this post.");
         }
 
+        // Update fields if provided
         if (StringUtils.hasText(request.getTitle())) {
             blogPost.setTitle(request.getTitle());
-        }
-        if (StringUtils.hasText(request.getExcerpt())) {
-            blogPost.setExcerpt(request.getExcerpt());
         }
         if (StringUtils.hasText(request.getContent())) {
             blogPost.setContent(request.getContent());
@@ -150,15 +148,19 @@ public class BlogService implements IBlogService {
         if (StringUtils.hasText(request.getImageUrl())) {
             blogPost.setImageUrl(request.getImageUrl());
         }
-        if (StringUtils.hasText(request.getReadTime())) {
-            blogPost.setReadTime(request.getReadTime());
-        }
 
         if (request.getStatus() != null && blogPost.getStatus() == BlogPostStatus.DRAFT) {
             if (request.getStatus() == BlogPostStatus.PENDING_APPROVAL) {
                 blogPost.setStatus(BlogPostStatus.PENDING_APPROVAL);
             }
         }
+
+        // Auto-generate excerpt and read time based on current content
+        String excerpt = generateExcerpt(blogPost.getContent(), request.getExcerpt());
+        String readTime = calculateReadTime(blogPost.getContent());
+
+        blogPost.setExcerpt(excerpt);
+        blogPost.setReadTime(readTime);
 
         BlogPost updatedPost = blogPostRepository.save(blogPost);
         return blogMapper.toBlogPostResponse(updatedPost);
@@ -211,11 +213,11 @@ public class BlogService implements IBlogService {
     }
 
     // --- Category Service Implementation ---
+
     @Override
     public List<BlogCategoryResponse> getAllBlogCategories() {
         return blogMapper.toBlogCategoryResponseList(blogCategoryRepository.findAll());
     }
-
     @Override
     @Transactional
     public BlogCategoryResponse createBlogCategory(CreateBlogCategoryRequest request) {
@@ -259,5 +261,76 @@ public class BlogService implements IBlogService {
             throw new IllegalStateException("Cannot delete a category that has posts associated with it.");
         }
         blogCategoryRepository.deleteById(categoryId);
+    }
+
+    private String toSlug(String input) {
+        String noWhitespace = WHITESPACE.matcher(input).replaceAll("-");
+        String normalized = Normalizer.normalize(noWhitespace, Normalizer.Form.NFD);
+        String slug = NON_LATIN.matcher(normalized).replaceAll("");
+        return slug.toLowerCase(Locale.ENGLISH);
+    }
+
+    /**
+     * Auto-generate excerpt from content if not provided
+     */
+    private String generateExcerpt(String content, String providedExcerpt) {
+        // If user provided excerpt, use it
+        if (StringUtils.hasText(providedExcerpt)) {
+            return providedExcerpt.trim();
+        }
+
+        // Auto-generate from content
+        if (!StringUtils.hasText(content)) {
+            return "";
+        }
+
+        // Remove HTML tags and get plain text
+        String plainText = content.replaceAll("<[^>]*>", "").trim();
+
+        // Split into words and take first EXCERPT_WORD_LIMIT words
+        String[] words = plainText.split("\\s+");
+        if (words.length <= EXCERPT_WORD_LIMIT) {
+            return plainText;
+        }
+
+        StringBuilder excerpt = new StringBuilder();
+        for (int i = 0; i < EXCERPT_WORD_LIMIT; i++) {
+            excerpt.append(words[i]).append(" ");
+        }
+
+        return excerpt.toString().trim() + "...";
+    }
+
+    /**
+     * Calculate estimated read time based on word count
+     */
+    private String calculateReadTime(String content) {
+        if (!StringUtils.hasText(content)) {
+            return "1 min";
+        }
+
+        // Remove HTML tags and get plain text
+        String plainText = content.replaceAll("<[^>]*>", "").trim();
+
+        // Count words
+        String[] words = plainText.split("\\s+");
+        int wordCount = words.length;
+
+        // Calculate minutes (minimum 1 minute)
+        int minutes = Math.max(1, Math.round((float) wordCount / AVERAGE_WORDS_PER_MINUTE));
+
+        if (minutes == 1) {
+            return "1 min";
+        } else if (minutes < 60) {
+            return minutes + " mins";
+        } else {
+            int hours = minutes / 60;
+            int remainingMinutes = minutes % 60;
+            if (remainingMinutes == 0) {
+                return hours == 1 ? "1 hour" : hours + " hours";
+            } else {
+                return hours + "h " + remainingMinutes + "m";
+            }
+        }
     }
 }
