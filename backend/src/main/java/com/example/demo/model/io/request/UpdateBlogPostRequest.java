@@ -14,7 +14,6 @@ public class UpdateBlogPostRequest {
     private String content;
     private Long categoryId;
     private String imageUrl;
-    private String readTime;
 
     private BlogPostStatus status;
 }

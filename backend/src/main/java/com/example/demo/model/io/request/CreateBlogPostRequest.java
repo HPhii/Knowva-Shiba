@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateBlogPostRequest {
     private String title;
-    private String excerpt;
+    private String excerpt; // Optional - will auto-generate from content if not provided
     private String content;
     private Long categoryId;
     private String imageUrl;
-    private String readTime;
+    // readTime removed - will be auto-calculated from content
     private BlogPostStatus status;
 }
