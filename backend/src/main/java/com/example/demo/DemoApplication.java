@@ -32,7 +32,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
                 @Tag(name = "11. [ADMIN] Admin Management", description = "APIs dành riêng cho Quản trị viên"),
                 @Tag(name = "12. [ADMIN] Dashboard Statistics", description = "APIs để lấy dữ liệu thống kê cho trang tổng quan của quản trị viên"),
                 @Tag(name = "13. Feedback Management", description = "APIs để quản lý feedback của người dùng"),
-                @Tag(name = "14. Bug Report Management", description = "APIs để quản lý báo cáo lỗi từ người dùng")
+                @Tag(name = "14. Bug Report Management", description = "APIs để quản lý báo cáo lỗi từ người dùng"),
+                @Tag(name = "15. Blog Management", description = "APIs cho việc quản lý blog"),
+                @Tag(name = "16. Interaction Management", description = "API để xử lý các tương tác của người dùng như comments và ratings")
         }
 )
 @SecurityScheme(name = "api", scheme = "bearer", type = SecuritySchemeType.HTTP, in = SecuritySchemeIn.HEADER)

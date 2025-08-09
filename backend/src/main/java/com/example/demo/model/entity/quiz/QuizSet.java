@@ -1,6 +1,8 @@
 package com.example.demo.model.entity.quiz;
 
 import com.example.demo.model.entity.User;
+import com.example.demo.model.entity.Rating;
+import com.example.demo.model.entity.Comment;
 import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
@@ -69,4 +71,12 @@ public class QuizSet {
     @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<QuizAccessControl> accessControlList;
+
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 }
