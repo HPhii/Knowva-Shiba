@@ -90,7 +90,9 @@ public class Account implements UserDetails {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         status = Status.ACTIVE;
-        isVerified = false;
+        if (isVerified == null) {
+            isVerified = false;
+        }
     }
 
     @PreUpdate

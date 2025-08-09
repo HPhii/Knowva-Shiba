@@ -63,6 +63,7 @@ public class AuthenticationService implements IAuthenticationService {
         }
 
         User newUser = new User();
+        newUser.setFullName(request.getUsername());
         userRepository.save(newUser);
 
         Account account = Account.builder()
@@ -165,7 +166,7 @@ public class AuthenticationService implements IAuthenticationService {
             String pictureUrl = (String) idToken.getPayload().get("picture");
 
             User newUser = new User();
-            newUser.setFullName(name);
+            newUser.setFullName(username);
             newUser.setAvatarUrl(pictureUrl);
             userRepository.save(newUser);
 
@@ -185,6 +186,11 @@ public class AuthenticationService implements IAuthenticationService {
             // Check if existing account is banned
             if (account.getStatus() == Status.BANNED) {
                 throw new AccountBannedException("Your account has been banned");
+            }
+
+            if (!account.getIsVerified()) {
+                account.setIsVerified(true);
+                accountRepository.save(account);
             }
         }
 

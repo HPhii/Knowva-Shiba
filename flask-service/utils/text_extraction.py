@@ -16,7 +16,7 @@ def extract_text(file, source_type):
         if file.content_type not in ["image/jpeg", "image/png"]:
             raise ValueError("Invalid image format. Only JPEG and PNG are supported.")
         with Image.open(file) as image:
-            return pytesseract.image_to_string(image, lang="eng")
+            return pytesseract.image_to_string(image, lang="eng+vie")
     elif source_type == "PDF":
         if file.content_type != "application/pdf":
             raise ValueError("Invalid file format. Only PDF is supported.")
