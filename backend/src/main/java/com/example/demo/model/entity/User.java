@@ -71,4 +71,12 @@ public class User {
     @OneToMany(mappedBy = "invitedUser")
     @JsonIgnore
     private List<FlashcardAccessControl> flashcardInvitations;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 }

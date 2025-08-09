@@ -1,6 +1,8 @@
 package com.example.demo.model.entity.flashcard;
 
 import com.example.demo.model.entity.User;
+import com.example.demo.model.entity.Rating;
+import com.example.demo.model.entity.Comment;
 import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.SourceType;
 import com.example.demo.model.enums.Visibility;
@@ -64,4 +66,12 @@ public class FlashcardSet {
     @OneToMany(mappedBy = "flashcardSet", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<FlashcardAccessControl> accessControls;
+
+    @OneToMany(mappedBy = "flashcardSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "flashcardSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 }

@@ -1,10 +1,12 @@
 package com.example.demo.model.entity;
 
 import com.example.demo.model.enums.BlogPostStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "blog_posts")
@@ -52,6 +54,14 @@ public class BlogPost {
     private String imageUrl;
 
     private String readTime;
+
+    @OneToMany(mappedBy = "blogPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Rating> ratings;
+
+    @OneToMany(mappedBy = "blogPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 
     @PrePersist
     protected void onCreate() {
