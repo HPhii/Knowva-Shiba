@@ -32,7 +32,7 @@ public class CloudinaryConsumerService {
             );
 
             // Gọi service để upload
-            Map uploadResult = cloudinaryService.upload(file);
+            Map<String, Object> uploadResult = cloudinaryService.upload(file);
             String imageUrl = uploadResult.get("url").toString();
 
             log.info("Image uploaded successfully for user {}. URL: {}", message.getUserId(), imageUrl);
