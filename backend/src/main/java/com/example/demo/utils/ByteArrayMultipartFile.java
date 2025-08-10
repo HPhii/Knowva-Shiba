@@ -33,7 +33,9 @@ public class ByteArrayMultipartFile implements MultipartFile {
     public java.io.InputStream getInputStream() { return new java.io.ByteArrayInputStream(content); }
     @Override
     public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
-        new java.io.FileOutputStream(dest).write(content);
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
+            fos.write(content);
+        }
     }
     @Override
     public Resource getResource() { return new ByteArrayResource(content, name); }
