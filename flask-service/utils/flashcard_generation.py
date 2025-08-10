@@ -91,14 +91,14 @@ You are a master academic assistant. Your task is to create high-quality, fill-i
         raise ValueError(f"Unsupported card type: {card_type}")
 
     completion = client2.chat.completions.create(
-        model="nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        model="nvidia/llama-3.3-nemotron-super-49b-v1.5",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
-        temperature=0.5,  # Giảm nhẹ để AI bám sát quy tắc hơn
+        temperature=0.5,
         top_p=0.95,
-        max_tokens=4096,
+        max_tokens=65536,
         frequency_penalty=0,
         presence_penalty=0,
         stream=False

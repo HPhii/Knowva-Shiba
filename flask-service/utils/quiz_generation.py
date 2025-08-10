@@ -139,14 +139,14 @@ def generate_quiz(text, language, question_type, max_questions):
     SYSTEM_PROMPT = _get_system_prompt(language, question_type.upper(), max_questions)
 
     completion = client1.chat.completions.create(
-        model="nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        model="nvidia/llama-3.3-nemotron-super-49b-v1.5",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
         temperature=0.5,
         top_p=0.95,
-        max_tokens=4096,
+        max_tokens=65536,
         frequency_penalty=0,
         presence_penalty=0,
         stream=False
@@ -166,14 +166,14 @@ def generate_quiz_from_flashcards(flashcards, language, question_type, max_quest
     SYSTEM_PROMPT = _get_system_prompt(language, question_type.upper(), max_questions)
 
     completion = client4.chat.completions.create(
-        model="nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        model="nvidia/llama-3.3-nemotron-super-49b-v1.5",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
         temperature=0.5,
         top_p=0.95,
-        max_tokens=4096,
+        max_tokens=65536,
         frequency_penalty=0,
         presence_penalty=0,
         stream=False
