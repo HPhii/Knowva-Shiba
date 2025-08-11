@@ -4,7 +4,8 @@ import com.example.demo.model.entity.User;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.service.intface.IInvitationEmailService;
-import com.example.demo.service.kafka.EmailProducerService;
+import com.example.demo.service.intface.IEmailService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class InvitationEmailService implements IInvitationEmailService {
 
-    private final EmailProducerService emailProducerService;
+    private final IEmailService emailService;
 
     @Override
     public void sendInvitationEmail(User inviter, User invitedUser, Long setId, String setName, String setType, Permission permission) {
@@ -34,6 +35,10 @@ public class InvitationEmailService implements IInvitationEmailService {
         emailDetails.setReceiver(invitedUser.getAccount());
         emailDetails.setSubject(subject);
 
-        emailProducerService.sendEmailEvent(emailDetails, templateName, contextVariables);
+        try {
+            emailService.sendMail(emailDetails, templateName, contextVariables);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
     }
 }

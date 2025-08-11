@@ -11,7 +11,6 @@ import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IEmailService;
-import com.example.demo.service.kafka.EmailProducerService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -28,7 +27,7 @@ public class AccountService implements IAccountService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccountMapper accountMapper;
-    private final EmailProducerService emailProducerService;
+    private final IEmailService emailService;
 
     @Override
     public void banUser(Long id) {
@@ -168,6 +167,11 @@ public class AccountService implements IAccountService {
                 "exptime", ((expirationTime - System.currentTimeMillis()) / (60 * 1000)) + 1
         );
 
-        emailProducerService.sendEmailEvent(emailDetails, "otp.html", context);
+        try {
+            emailService.sendMail(emailDetails, "otp.html", context);
+        } catch (MessagingException e) {
+            // Xử lý lỗi nếu cần, hoặc để @Async tự xử lý
+            e.printStackTrace();
+        }
     }
 }

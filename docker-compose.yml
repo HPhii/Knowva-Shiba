@@ -1,11 +1,10 @@
 version: '3.8'
 
 services:
-  # 1. Database - MySQL
-  mysql_db:
+  mysql_container:
     image: mysql:8.0
-    container_name: mysql_prod_db
-    restart: always
+    container_name: mysql_db_container
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: exe
@@ -14,117 +13,91 @@ services:
     volumes:
       - ./mysql-init:/docker-entrypoint-initdb.d
       - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD}"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
-  # 2. In-memory Cache - Redis
-  redis:
+  redis_container:
     image: redis:7.0-alpine
-    container_name: redis_prod_cache
-    restart: always
+    container_name: redis_container
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - backend
+      start_period: 30s
 
-  # 3. Kafka Zookeeper - Cần cho Kafka
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    container_name: zookeeper_prod
-    restart: always
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - backend
-
-  # 4. Message Broker - Kafka
-  kafka:
-    image: confluentinc/cp-kafka:7.0.1
-    container_name: kafka_prod_broker
-    restart: always
-    ports:
-      - "9093:9093"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:9092,PLAINTEXT://localhost:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-    networks:
-      - backend
-
-  backend-app:
+  app:
     image: hieuphi/springapp:latest
-    container_name: springboot_prod_app
-    restart: always
-    depends_on:
-      mysql_db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      kafka:
-        condition: service_started
+    container_name: springboot_container
+    restart: unless-stopped
     environment:
-      MYSQL_URL: jdbc:mysql://mysql_db:3306/exe
-      SPRING_DATA_REDIS_HOST: redis
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      FLASK_SERVICE_HOST: http://flask-app:5000
+      JAVA_OPTS: "-Xms256m -Xmx768m"
+      MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      CLIENT_URL: ${CLIENT_URL}
+      SERVER_URL: ${SERVER_URL}
+      FLASK_SERVICE_HOST: ${FLASK_SERVICE_HOST}
+      SPRING_DATA_REDIS_HOST: redis_container
+      SPRING_DATA_REDIS_PORT: 6379
       PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID}
       PAYOS_API_KEY: ${PAYOS_API_KEY}
       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY}
-      CLIENT_URL: ${CLIENT_URL}
-      SERVER_URL: ${SERVER_URL}
+    depends_on:
+      mysql_container:
+        condition: service_healthy
+      redis_container:
+        condition: service_healthy
     ports:
       - "8080:8080"
     networks:
       - backend
+    mem_limit: 1g
 
-  # 6. AI Service - Flask
-  flask-app:
-    image: hieuphi/flaskapp:latest # Sử dụng image bạn build từ Docker Hub
-    container_name: flask_prod_app
-    restart: always
+  flask_app:
+    image: hieuphi/flaskapp:latest
+    container_name: flask_container
+    restart: unless-stopped
     environment:
       LLAMDA_API_KEY1: ${LLAMDA_API_KEY1}
       LLAMDA_API_KEY2: ${LLAMDA_API_KEY2}
       LLAMDA_API_KEY3: ${LLAMDA_API_KEY3}
       LLAMDA_API_KEY4: ${LLAMDA_API_KEY4}
+    depends_on:
+      - app
     ports:
       - "5000:5000"
     networks:
       - backend
+    mem_limit: 512m
 
-# Volumes để lưu trữ dữ liệu bền bỉ
 volumes:
   mysql_data:
   redis_data:
 
-# Network để các container giao tiếp với nhau
 networks:
   backend:
     driver: bridge
