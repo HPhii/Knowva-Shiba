@@ -16,36 +16,6 @@ services:
       retries: 5
     networks:
       - backend_network # Kết nối vào network của backend
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    container_name: zookeeper_backend
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - backend_network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.0.1
-    container_name: kafka_backend
-    ports:
-      - "9092:9092"
-      - "9093:9093" # Port để truy cập từ host nếu cần (cho công cụ Kafka GUI)
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper_backend:2181 # Tên service Zookeeper trong compose file này
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_backend:9092,PLAINTEXT_HOST://localhost:9093 # Tên service Kafka và host port
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-    depends_on:
-      - zookeeper
-    networks:
-      - backend_network
-
 volumes:
   redis_data:
 

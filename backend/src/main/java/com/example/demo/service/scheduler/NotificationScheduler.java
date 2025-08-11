@@ -6,7 +6,7 @@ import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.io.response.object.EmailDetails;
 import com.example.demo.repository.FlashcardProgressRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.service.impl.EmailService;
+import com.example.demo.service.intface.IEmailService;
 import com.example.demo.service.intface.INotificationService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class NotificationScheduler {
 
     private final FlashcardProgressRepository flashcardProgressRepository;
     private final UserRepository userRepository;
-    private final EmailService emailService;
+    private final IEmailService emailService;
     private final INotificationService notificationService;
 
     @Scheduled(cron = "0 0 8 * * ?")

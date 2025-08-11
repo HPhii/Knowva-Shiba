@@ -20,7 +20,6 @@ import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IInvitationEmailService;
 import com.example.demo.service.intface.INotificationService;
-import com.example.demo.service.kafka.EmailProducerService;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
@@ -45,7 +44,6 @@ public class QuizSetService implements IQuizSetService {
     private final QuizAccessControlRepository quizAccessControlRepository;
     private final UserRepository userRepository;
     private final INotificationService notificationService;
-    private final EmailProducerService emailProducerService;
     private final IInvitationEmailService invitationEmailService;
 
     @Override
