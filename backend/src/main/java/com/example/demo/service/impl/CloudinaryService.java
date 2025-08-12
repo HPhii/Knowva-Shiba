@@ -18,15 +18,13 @@ public class CloudinaryService implements ICloudinaryService {
     @Override
     public Map upload(MultipartFile file) {
         try {
-            // Gọi phương thức upload mới với byte array
+            // call new upload function with file bytes and empty options
             return this.upload(file.getBytes(), Map.of());
         } catch (IOException io) {
-            // Gói exception gốc vào để không mất thông tin lỗi
             throw new RuntimeException("Image upload fail", io);
         }
     }
 
-    // Implement phương thức mới
     @Override
     public Map upload(byte[] fileBytes, Map options) throws IOException {
         return this.cloudinary.uploader().upload(fileBytes, options);
@@ -35,7 +33,6 @@ public class CloudinaryService implements ICloudinaryService {
     @Override
     public String uploadImage(MultipartFile file) {
         try {
-            // Sử dụng lại phương thức upload mới
             Map uploadResult = this.upload(file.getBytes(), ObjectUtils.asMap("resource_type", "auto"));
             return uploadResult.get("url").toString();
         } catch (IOException e) {

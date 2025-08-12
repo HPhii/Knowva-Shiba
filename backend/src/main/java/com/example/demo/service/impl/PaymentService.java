@@ -50,6 +50,9 @@ public class PaymentService implements IPaymentService {
     @Value("${payos.checksum-key}")
     private String checksumKey;
 
+    @Value("${payos.price}")
+    private int price;
+
     @Override
     public PaymentResponse createPaymentLink(Long userId, boolean isRenewal) throws Exception {
         User user = userRepository.findById(userId)
@@ -64,7 +67,6 @@ public class PaymentService implements IPaymentService {
         long orderCode = System.currentTimeMillis() * 1000 + new Random().nextInt(1000);
         String productName = isRenewal ? "Renew VIP" : "Upgrade VIP";
         String description = orderCode + " - " + (isRenewal ? "RVIP" : "UVIP");
-        int price = 5000;
 
         String returnUrl = serverUrl + "/api/payment/success";
         String cancelUrl = serverUrl + "/api/payment/cancel";

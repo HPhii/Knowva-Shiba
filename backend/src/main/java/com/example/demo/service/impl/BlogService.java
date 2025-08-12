@@ -191,7 +191,7 @@ public class BlogService implements IBlogService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        // Chỉ tác giả hoặc ADMIN mới được xóa
+        // Only allow deletion if the user is the author or an admin
         if (!Objects.equals(blogPost.getAuthor().getId(), userId) && user.getAccount().getRole() != Role.ADMIN) {
             throw new ForbiddenException("You do not have permission to delete this post.");
         }

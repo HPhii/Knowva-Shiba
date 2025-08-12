@@ -103,10 +103,10 @@ public class Filter extends OncePerRequestFilter {
                 return;
             }
 
-            // Kiểm tra xem API có yêu cầu email đã xác thực không
+            // check if email verification is required
             if (checkRequiresVerifiedEmail(request.getRequestURI()) &&
                     !Boolean.TRUE.equals(account.getIsVerified()) &&
-                    account.getRole() != Role.ADMIN) { // Admin được bỏ qua kiểm tra này
+                    account.getRole() != Role.ADMIN) { // admin can bypass email verification
                 handlerExceptionResolver.resolveException(request, response, null,
                         new AuthException("Email verification required for this action."));
                 return;

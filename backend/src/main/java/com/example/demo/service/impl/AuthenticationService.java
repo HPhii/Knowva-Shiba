@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
-    private static final String WELCOME_SUBJECT = "ABC";
+    private static final String WELCOME_SUBJECT = "[KNOWVA] Welcome to Knowva!";
     private static final String WELCOME_TEMPLATE = "welcome.html";
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;

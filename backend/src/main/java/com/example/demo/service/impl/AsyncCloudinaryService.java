@@ -18,15 +18,14 @@ public class AsyncCloudinaryService {
 
     private final ICloudinaryService cloudinaryService;
     private final SimpMessagingTemplate messagingTemplate;
+    private static final String UPLOAD_TOPIC = "/topic/cloudinary-upload";
 
-    // === THAY ĐỔI SIGNATURE CỦA PHƯƠNG THỨC ===
     @Async
     public void uploadImageAndNotify(byte[] fileBytes, String originalFilename, Long userId) {
-        String destination = "/topic/cloudinary-upload/" + userId;
+        String destination = UPLOAD_TOPIC + userId;
         try {
             log.info("Starting async image upload for user {}", userId);
 
-            // Gọi phương thức upload mới (sẽ tạo ở bước 3)
             Map<String, Object> uploadResult = cloudinaryService.upload(
                     fileBytes,
                     ObjectUtils.asMap("resource_type", "auto", "public_id", originalFilename)
@@ -38,7 +37,7 @@ public class AsyncCloudinaryService {
             messagingTemplate.convertAndSend(destination, Map.of("url", imageUrl));
 
         } catch (Exception e) {
-            // Log cả stack trace để debug dễ hơn
+            // log stack trace to debug
             log.error("Failed to upload image for user {}: {}", userId, e.getMessage(), e);
             messagingTemplate.convertAndSend(destination, Map.of("error", "Upload failed: " + e.getMessage()));
         }
