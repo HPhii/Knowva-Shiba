@@ -45,7 +45,7 @@ public class SecurityConfig {
     @Value("${server.url}")
     private String serverUrl;
 
-    @Bean // -> Biến function thành thư viện
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
@@ -89,20 +89,25 @@ public class SecurityConfig {
                                 "/api/register",
                                 "/api/login",
                                 "/api/google",
+                                // reset password endpoints
                                 "/api/send-reset-otp",
                                 "/api/reset-password",
+                                // payment endpoints
                                 "/api/payment/success",
                                 "/api/payment/cancel",
                                 "/api/payment/payos-webhook",
+                                // search endpoints
                                 "/api/search/**",
+                                // Quiz set endpoints
                                 "/api/quiz-sets/all",
                                 "/api/quiz-sets/{id}",
                                 "/api/quiz-sets/category/{category}",
+                                // Flashcard endpoints
                                 "/api/flashcard-sets/all",
                                 "/api/flashcard-sets/{id}",
                                 "/api/flashcard-sets/category/{category}",
                                 "/api/feedback",
-                                // Blog endpoints - public access for guests
+                                // Blog endpoints
                                 "/api/blog/posts",
                                 "/api/blog/posts/slug/**",
                                 "/api/blog/posts/{id}",
