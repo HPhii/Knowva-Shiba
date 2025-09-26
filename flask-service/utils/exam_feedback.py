@@ -5,8 +5,8 @@ import re
 import json
 
 load_dotenv()
-LLAMDA_API_KEY3 = os.getenv("LLAMDA_API_KEY3")
-client3 = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=LLAMDA_API_KEY3)
+GOOGLE_GEMINI_API_KEY = os.getenv("GOOGLE_GEMINI_API_KEY")
+client = OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=GOOGLE_GEMINI_API_KEY)
 
 def generate_exam_feedback(correct_answer, user_answer):
     SYSTEM_PROMPT = """
@@ -85,17 +85,14 @@ You are a kind and encouraging Vietnamese mentor helping students learn through 
 
     user_message = f"Correct Answer: {correct_answer}\nUser Answer: {user_answer}"
 
-    completion = client3.chat.completions.create(
-        model="nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    completion = client.chat.completions.create(
+        model="models/gemini-2.5-flash-lite",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text}
+            {"role": "user", "content": user_message}
         ],
         temperature=0.5,
         top_p=0.95,
-        max_tokens=65536,
-        frequency_penalty=0,
-        presence_penalty=0,
         stream=False
     )
 

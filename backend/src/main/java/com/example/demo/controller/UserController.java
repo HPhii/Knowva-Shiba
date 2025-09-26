@@ -5,6 +5,7 @@ import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
 import com.example.demo.model.io.response.object.UserProfileResponse;
+import com.example.demo.model.io.response.paged.PagedAccountResponse;
 import com.example.demo.model.io.response.paged.PagedUsersResponse;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IPaymentService;
@@ -45,7 +46,7 @@ public class UserController {
                     content = @Content(schema = @Schema(implementation = PagedUsersResponse.class))),
             @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
     })
-    public ResponseEntity<PagedUsersResponse> getAllUsers(
+    public ResponseEntity<PagedAccountResponse> getAllUsers(
             @Parameter(description = "Số trang (bắt đầu từ 0)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Số lượng phần tử mỗi trang") @RequestParam(defaultValue = "8") int size,
             @Parameter(description = "Sắp xếp theo trường (vd: id, fullName)") @RequestParam(defaultValue = "id") String sortBy,
@@ -58,7 +59,7 @@ public class UserController {
     ) {
         Sort.Direction direction = Sort.Direction.fromString(sortDirection.toUpperCase());
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        PagedUsersResponse response = userService.getAllUsers(username, email, role, status, isVerified, pageable);
+        PagedAccountResponse response = userService.getAllUsers(username, email, role, status, isVerified, pageable);
         return ResponseEntity.ok(response);
     }
 

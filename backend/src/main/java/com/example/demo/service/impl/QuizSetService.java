@@ -174,6 +174,12 @@ public class QuizSetService implements IQuizSetService {
         }
 
         for (SaveQuizQuestionRequest qReq : request.getQuestions()) {
+            boolean hasCorrectAnswer = qReq.getAnswers().stream()
+                    .anyMatch(answer -> Boolean.TRUE.equals(answer.getIsCorrect()));
+            if (!hasCorrectAnswer) {
+                throw new IllegalArgumentException("Each question must have at least one correct answer.");
+            }
+
             QuizQuestion question = QuizQuestion.builder()
                     .quizSet(quizSet)
                     .questionText(qReq.getQuestionText())
@@ -221,8 +227,7 @@ public class QuizSetService implements IQuizSetService {
             quizSet.setAccessToken(null);
         }
 
-        List<QuizQuestion> updatedQuestions = updateQuestions(quizSet, request.getQuestions());
-        quizSet.setQuestions(updatedQuestions);
+        updateQuestions(quizSet, request.getQuestions());
 
         quizSet = quizSetRepository.save(quizSet);
         return quizSetMapper.mapToQuizSetResponse(quizSet);
@@ -314,16 +319,33 @@ public class QuizSetService implements IQuizSetService {
         quizSet.setUpdatedAt(LocalDateTime.now());
     }
 
-    private List<QuizQuestion> updateQuestions(QuizSet quizSet, List<UpdateQuizQuestionRequest> questionRequests) {
-        List<QuizQuestion> updatedQuestions = new ArrayList<>();
+    private void updateQuestions(QuizSet quizSet, List<UpdateQuizQuestionRequest> questionRequests) {
+        List<Long> requestQuestionIds = questionRequests.stream()
+                .map(UpdateQuizQuestionRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        quizSet.getQuestions().removeIf(q -> !requestQuestionIds.contains(q.getId()));
+
         for (UpdateQuizQuestionRequest qReq : questionRequests) {
+            if (qReq.getAnswers() == null || qReq.getAnswers().isEmpty()) {
+                throw new IllegalArgumentException("Each question must have at least one answer");
+            }
+
+            boolean hasCorrectAnswer = qReq.getAnswers().stream()
+                    .anyMatch(answer -> Boolean.TRUE.equals(answer.getIsCorrect()));
+            if (!hasCorrectAnswer) {
+                throw new IllegalArgumentException("Each question must have at least one correct answer.");
+            }
+
             QuizQuestion question = findOrCreateQuestion(quizSet, qReq);
             updateQuestionFields(question, qReq);
-            List<QuizAnswer> updatedAnswers = updateAnswers(question, qReq.getAnswers());
-            question.setAnswers(updatedAnswers);
-            updatedQuestions.add(question);
+            updateAnswers(question, qReq.getAnswers());
+
+            if (qReq.getId() == null) {
+                quizSet.getQuestions().add(question);
+            }
         }
-        return updatedQuestions;
     }
 
     private QuizQuestion findOrCreateQuestion(QuizSet quizSet, UpdateQuizQuestionRequest qReq) {
@@ -349,16 +371,24 @@ public class QuizSetService implements IQuizSetService {
         question.setUpdatedAt(LocalDateTime.now());
     }
 
-    private List<QuizAnswer> updateAnswers(QuizQuestion question, List<UpdateQuizAnswerRequest> answerRequests) {
-        List<QuizAnswer> updatedAnswers = new ArrayList<>();
+    private void updateAnswers(QuizQuestion question, List<UpdateQuizAnswerRequest> answerRequests) {
+        List<Long> requestAnswerIds = answerRequests.stream()
+                .map(UpdateQuizAnswerRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        question.getAnswers().removeIf(a -> !requestAnswerIds.contains(a.getId()));
+
         for (UpdateQuizAnswerRequest aReq : answerRequests) {
             QuizAnswer answer = findOrCreateAnswer(question, aReq);
             answer.setAnswerText(aReq.getAnswerText());
             answer.setIsCorrect(aReq.getIsCorrect());
             answer.setUpdatedAt(LocalDateTime.now());
-            updatedAnswers.add(answer);
+
+            if (aReq.getId() == null) {
+                question.getAnswers().add(answer);
+            }
         }
-        return updatedAnswers;
     }
 
     private QuizAnswer findOrCreateAnswer(QuizQuestion question, UpdateQuizAnswerRequest aReq) {

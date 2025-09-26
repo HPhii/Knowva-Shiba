@@ -5,8 +5,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-LLAMDA_API_KEY2 = os.getenv("LLAMDA_API_KEY2")  # For flashcard generation
-client2 = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=LLAMDA_API_KEY2)
+GOOGLE_GEMINI_API_KEY = os.getenv("GOOGLE_GEMINI_API_KEY")  # For flashcard generation
+client = OpenAI(base_url="https://generativelanguage.googleapis.com/v1beta/openai/", api_key=GOOGLE_GEMINI_API_KEY)
 
 def generate_flashcards(text, language, card_type, max_flashcards):
     if card_type == "STANDARD":
@@ -90,17 +90,14 @@ You are a master academic assistant. Your task is to create high-quality, fill-i
     else:
         raise ValueError(f"Unsupported card type: {card_type}")
 
-    completion = client2.chat.completions.create(
-        model="nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    completion = client.chat.completions.create(
+        model="models/gemini-2.5-flash-lite",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": text}
         ],
         temperature=0.5,
         top_p=0.95,
-        max_tokens=65536,
-        frequency_penalty=0,
-        presence_penalty=0,
         stream=False
     )
 

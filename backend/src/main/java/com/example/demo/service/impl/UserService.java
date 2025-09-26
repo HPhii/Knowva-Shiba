@@ -1,14 +1,16 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.exception.EntityNotFoundException;
+import com.example.demo.mapper.AccountMapper;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.quiz.QuizAttempt;
 import com.example.demo.model.enums.Role;
 import com.example.demo.model.enums.Status;
 import com.example.demo.model.io.dto.UpdateUserProfileDTO;
+import com.example.demo.model.io.response.object.AccountResponse;
 import com.example.demo.model.io.response.object.UserProfileResponse;
 import com.example.demo.model.io.response.object.UserStatsResponse;
-import com.example.demo.model.io.response.paged.PagedUsersResponse;
+import com.example.demo.model.io.response.paged.PagedAccountResponse;
 import com.example.demo.repository.*;
 import com.example.demo.service.intface.IUserService;
 import com.example.demo.specification.UserSpecification;
@@ -26,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,11 +38,12 @@ public class UserService implements IUserService {
     private final QuizSetRepository quizSetRepository;
     private final FlashcardAttemptRepository flashcardAttemptRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final AccountMapper accountMapper;
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     @Override
     @Cacheable(value = "users", key = "#username + '-' + #email + '-' + #role + '-' + #status + '-' + #isVerified + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
-    public PagedUsersResponse getAllUsers(String username, String email, Role role, Status status, Boolean isVerified, Pageable pageable) {
+    public PagedAccountResponse getAllUsers(String username, String email, Role role, Status status, Boolean isVerified, Pageable pageable) {
         Specification<User> spec = Specification.where(null);
 
         if (username != null && !username.isBlank()) {
@@ -59,10 +63,12 @@ public class UserService implements IUserService {
         }
 
         Page<User> userPage = userRepository.findAll(spec, pageable);
-        List<User> users = userPage.getContent();
+        List<AccountResponse> accountResponses = userPage.getContent().stream()
+                .map(user -> accountMapper.toAccountResponse(user.getAccount()))
+                .collect(Collectors.toList());
 
-        return new PagedUsersResponse(
-                users,
+        return new PagedAccountResponse(
+                accountResponses,
                 userPage.getTotalElements(),
                 userPage.getTotalPages(),
                 pageable.getPageNumber()

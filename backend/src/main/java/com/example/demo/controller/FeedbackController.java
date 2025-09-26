@@ -36,7 +36,12 @@ public class FeedbackController {
             @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ")
     })
     public ResponseEntity<FeedbackResponse> createFeedback(@Valid @RequestBody CreateFeedbackRequest request) {
-        Long userId = accountService.getCurrentAccount().getUser().getId();
+        Long userId = null;
+        try {
+            userId = accountService.getCurrentAccount().getUser().getId();
+        } catch (Exception e) {
+            // allow anonymous feedback
+        }
         FeedbackResponse response = feedbackService.createFeedback(request, userId);
         return ResponseEntity.ok(response);
     }
