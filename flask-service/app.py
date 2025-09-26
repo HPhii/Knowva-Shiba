@@ -6,7 +6,7 @@ from utils.flashcard_generation import generate_flashcards
 from utils.exam_feedback import generate_exam_feedback
 from concurrent.futures import ThreadPoolExecutor
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 app = Flask(__name__)
 MAX_FILES = 5

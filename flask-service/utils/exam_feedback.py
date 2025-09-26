@@ -89,7 +89,7 @@ You are a kind and encouraging Vietnamese mentor helping students learn through 
         model="models/gemini-2.5-flash-lite",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text}
+            {"role": "user", "content": user_message}
         ],
         temperature=0.5,
         top_p=0.95,

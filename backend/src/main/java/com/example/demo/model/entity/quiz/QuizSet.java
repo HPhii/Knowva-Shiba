@@ -60,7 +60,7 @@ public class QuizSet {
 
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<QuizQuestion> questions;
 
