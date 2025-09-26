@@ -1,2 +1,2 @@
-CREATE DATABASE IF NOT EXISTS exe;
-USE exe;
+CREATE DATABASE IF NOT EXISTS knowva_db;
+USE knowva_db;
