@@ -36,7 +36,6 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
     private final FlashcardSetRepository flashcardSetRepository;
     private final FlashcardAttemptRepository flashcardAttemptRepository;
 
-    // Lấy dữ liệu chế độ học
     @Override
     public SpacedRepetitionModeData getModeData(Long userId, Long flashcardSetId) {
         User user = userRepository.findById(userId)
@@ -45,9 +44,9 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
         SpacedRepetitionModeData modeData = new SpacedRepetitionModeData();
-        Optional<List<FlashcardProgress>> progressListOpt = flashcardProgressRepository.findByUser_Id(userId);
+        List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcardSet);
 
-        if (progressListOpt.isEmpty() || progressListOpt.get().isEmpty()) {
+        if (progressList.isEmpty()) {
             modeData.setFirstTime(true);
             modeData.setMessage(SPACED_REP);
             FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
@@ -70,6 +69,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
             modeData.setFirstTime(false);
             modeData.setMessage(NEW_DAY);
             LocalDate today = LocalDate.now();
+
             long newCardsCount = flashcardProgressRepository.countByUserAndFlashcard_FlashcardSetAndStatus(user, flashcardSet, CardStatus.NEW);
             long reviewCardsCount = flashcardProgressRepository.countByUserAndFlashcard_FlashcardSetAndStatusAndNextDueDateBefore(
                     user, flashcardSet, CardStatus.KNOWN, today);
@@ -102,6 +102,34 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
     }
 
     // Bắt đầu phiên học
+//    @Override
+//    public List<Flashcard> startStudySession(Long userId, Long flashcardSetId) {
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+//        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+//                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+//
+//        FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
+//                .orElseThrow(() -> new EntityNotFoundException("Settings not found"));
+//
+//        List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcardSet).stream()
+//                .filter(p -> p.getStatus() != CardStatus.ARCHIVED)
+//                .collect(Collectors.toList());
+//
+//        List<FlashcardProgress> newProgressList = getNewFlashcards(progressList, settings.getNewFlashcardsPerDay());
+//        List<FlashcardProgress> reviewProgressList = getReviewFlashcards(progressList, LocalDate.now());
+//
+//        List<Flashcard> result = Stream.concat(newProgressList.stream(), reviewProgressList.stream())
+//                .map(FlashcardProgress::getFlashcard)
+//                .collect(Collectors.toList());
+//
+//        if (result.isEmpty()) {
+//            throw new IllegalStateException("No flashcards available for study session.");
+//        }
+//
+//        return result;
+//    }
+
     @Override
     public List<Flashcard> startStudySession(Long userId, Long flashcardSetId) {
         User user = userRepository.findById(userId)
@@ -110,21 +138,37 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
                 .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
 
         FlashcardSetProgressSettings settings = flashcardSetProgressSettingsRepository.findByUserAndFlashcardSet(user, flashcardSet)
-                .orElseThrow(() -> new EntityNotFoundException("Settings not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Settings not found for this user and flashcard set."));
 
         List<FlashcardProgress> progressList = flashcardProgressRepository.findByUserAndFlashcard_FlashcardSet(user, flashcardSet).stream()
                 .filter(p -> p.getStatus() != CardStatus.ARCHIVED)
                 .collect(Collectors.toList());
 
-        List<FlashcardProgress> newProgressList = getNewFlashcards(progressList, settings.getNewFlashcardsPerDay());
         List<FlashcardProgress> reviewProgressList = getReviewFlashcards(progressList, LocalDate.now());
 
-        List<Flashcard> result = Stream.concat(newProgressList.stream(), reviewProgressList.stream())
+        LocalDate today = LocalDate.now();
+        long newCardsStudiedTodayCount = progressList.stream()
+                .filter(p -> p.getStatus() != CardStatus.NEW &&
+                        p.getLastReviewedAt() != null &&
+                        p.getLastReviewedAt().toLocalDate().isEqual(today))
+                .count();
+
+        int newFlashcardsPerDay = settings.getNewFlashcardsPerDay();
+        long remainingNewCardLimit = newFlashcardsPerDay - newCardsStudiedTodayCount;
+        if (remainingNewCardLimit < 0) {
+            remainingNewCardLimit = 0;
+        }
+
+        List<FlashcardProgress> newProgressList = getNewFlashcards(progressList, (int) remainingNewCardLimit);
+
+
+        List<Flashcard> result = Stream.concat(reviewProgressList.stream(), newProgressList.stream())
                 .map(FlashcardProgress::getFlashcard)
+                .distinct()
                 .collect(Collectors.toList());
 
-        if (result.isEmpty()) {
-            throw new IllegalStateException("No flashcards available for study session.");
+        if (result.isEmpty() && !progressList.isEmpty()) {
+            throw new IllegalStateException("No flashcards available for study session today. Please come back tomorrow!");
         }
 
         return result;
@@ -270,6 +314,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
                         .lastReviewedAt(null)
                         .easeFactor(DEFAULT_EASE_FACTOR)
                         .repetitionCount(0)
+                        .interval(MINIMUM_INTERVAL)
                         .nextDueDate(null)
                         .build())
                 .collect(Collectors.toList());
