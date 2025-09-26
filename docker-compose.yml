@@ -13,6 +13,11 @@ services:
     volumes:
       - ./mysql-init:/docker-entrypoint-initdb.d
       - mysql_data:/var/lib/mysql
+    command:
+      - '--innodb_buffer_pool_size=256M'
+      - '--key_buffer_size=16M'
+      - '--max_connections=50'
+      - '--performance_schema=0'
     networks:
       - backend
     healthcheck:
@@ -20,7 +25,9 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 60s
+    mem_reservation: 256M
+    mem_limit: 768M
 
   redis_container:
     image: redis:7.0-alpine
@@ -39,14 +46,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    mem_reservation: 64M
+    mem_limit: 256M
 
   app:
-    image: hieuphi/springapp:latest
+    image: hieuphi/springtest:v1
     container_name: springboot_container
     restart: unless-stopped
     environment:
       JAVA_OPTS: "-Xms256m -Xmx768m"
-      MYSQL_URL: jdbc:mysql://mysql_container:3306/exe
+      MYSQL_URL: jdbc:mysql://mysql_container:3306/exe?createDatabaseIfNotExist=true
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -66,6 +75,7 @@ services:
       PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID}
       PAYOS_API_KEY: ${PAYOS_API_KEY}
       PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY}
+      PAYOS_PRICE: ${PAYOS_PRICE}
     depends_on:
       mysql_container:
         condition: service_healthy
@@ -75,7 +85,7 @@ services:
       - "8080:8080"
     networks:
       - backend
-    mem_limit: 1g
+    mem_limit: 1.2g
 
   flask_app:
     image: hieuphi/flaskapp:latest
