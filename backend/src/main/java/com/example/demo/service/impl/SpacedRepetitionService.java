@@ -146,10 +146,11 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
 
         List<FlashcardProgress> reviewProgressList = getReviewFlashcards(progressList, LocalDate.now());
 
+        LocalDate today = LocalDate.now();
         long newCardsStudiedTodayCount = progressList.stream()
                 .filter(p -> p.getStatus() != CardStatus.NEW &&
                         p.getLastReviewedAt() != null &&
-                        p.getLastReviewedAt().toLocalDate().isEqual(LocalDate.now()))
+                        p.getLastReviewedAt().toLocalDate().isEqual(today))
                 .count();
 
         int newFlashcardsPerDay = settings.getNewFlashcardsPerDay();
