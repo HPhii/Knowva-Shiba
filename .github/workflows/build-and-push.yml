@@ -57,7 +57,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Di chuyển đến thư mục project trên máy chủ
-            cd knowva-shiba 
+            cd knowva
 
             # Tải về các image mới nhất từ Docker Hub
             docker-compose pull
