@@ -219,7 +219,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
 
     @Override
     public void updateFlashcardProgress(FlashcardProgress progress, int quality) {
-        if (progress.getRepetitionCount() == null) {
+        if (progress.getRepetitionCount() == null || progress.getEaseFactor() == null || progress.getInterval() == null) {
             progress.setRepetitionCount(0);
             progress.setEaseFactor(DEFAULT_EASE_FACTOR);
             progress.setInterval(MINIMUM_INTERVAL);
@@ -241,7 +241,6 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
         } else {
             progress.setRepetitionCount(0);
             if (quality == 0) {
-                // Hình phạt nặng hơn cho quality = 0
                 progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.3f));
             } else {
                 progress.setEaseFactor(Math.max(1.3f, progress.getEaseFactor() - 0.2f));
