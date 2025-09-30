@@ -7,6 +7,7 @@ import com.example.demo.mapper.BlogMapper;
 import com.example.demo.model.entity.BlogCategory;
 import com.example.demo.model.entity.BlogPost;
 import com.example.demo.model.entity.User;
+import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.enums.BlogPostStatus;
 import com.example.demo.model.enums.Role;
 import com.example.demo.model.io.request.CreateBlogCategoryRequest;
@@ -20,6 +21,7 @@ import com.example.demo.repository.BlogCategoryRepository;
 import com.example.demo.repository.BlogPostRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IBlogService;
+import com.example.demo.service.intface.IActivityLogService;
 import com.example.demo.specification.BlogPostSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -44,6 +46,7 @@ public class BlogService implements IBlogService {
     private final BlogCategoryRepository blogCategoryRepository;
     private final UserRepository userRepository;
     private final BlogMapper blogMapper;
+    private final IActivityLogService activityLogService;
 
     private static final Pattern NON_LATIN = Pattern.compile("[^\\w-]");
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
@@ -120,6 +123,11 @@ public class BlogService implements IBlogService {
                 .build();
 
         BlogPost savedBlogPost = blogPostRepository.save(blogPost);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        activityLogService.logActivity(author, ActivityType.CREATE_BLOG_POST, "", savedBlogPost.getId());
+        // =========================
+
         return blogMapper.toBlogPostResponse(savedBlogPost);
     }
 
@@ -207,6 +215,10 @@ public class BlogService implements IBlogService {
         blogPost.setStatus(status);
         if (status == BlogPostStatus.PUBLISHED) {
             blogPost.setPublishedAt(LocalDateTime.now());
+
+            // === GHI LOG HOẠT ĐỘNG KHI PUBLISH ===
+            activityLogService.logActivity(blogPost.getAuthor(), ActivityType.PUBLISH_BLOG_POST, "", blogPost.getId());
+            // ====================================
         }
         BlogPost savedBlogPost = blogPostRepository.save(blogPost);
         return blogMapper.toBlogPostResponse(savedBlogPost);
@@ -334,3 +346,4 @@ public class BlogService implements IBlogService {
         }
     }
 }
+

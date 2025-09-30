@@ -3,12 +3,14 @@ package com.example.demo.service.impl;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.flashcard.*;
+import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.enums.CardStatus;
 import com.example.demo.model.io.dto.PerformanceStats;
 import com.example.demo.model.io.dto.SpacedRepetitionModeData;
 import com.example.demo.model.io.dto.StudyProgressStats;
 import com.example.demo.repository.*;
 import com.example.demo.service.intface.ISpacedRepetitionService;
+import com.example.demo.service.intface.IActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,7 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
     private final UserRepository userRepository;
     private final FlashcardSetRepository flashcardSetRepository;
     private final FlashcardAttemptRepository flashcardAttemptRepository;
+    private final IActivityLogService activityLogService;
 
     @Override
     public SpacedRepetitionModeData getModeData(Long userId, Long flashcardSetId) {
@@ -213,6 +216,13 @@ public class SpacedRepetitionService implements ISpacedRepetitionService {
         stats.setUnstudiedCount((int) unstudiedCount);
         stats.setDontKnowCount((int) dontKnowCount);
         stats.setKnowCount((int) knowCount);
+
+        // === GHI LOG HOẠT ĐỘNG KHI HOÀN THÀNH PHIÊN HỌC ===
+        // Chỉ ghi log khi không còn thẻ nào cần ôn tập trong ngày (tránh spam log)
+        if (unstudiedCount == 0 && dontKnowCount == 0) {
+            activityLogService.logActivity(user, ActivityType.STUDY_FLASHCARD_SET, "", flashcard.getFlashcardSet().getId());
+        }
+        // =================================================
 
         return stats;
     }

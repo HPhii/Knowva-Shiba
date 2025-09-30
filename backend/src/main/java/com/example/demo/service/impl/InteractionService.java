@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.exception.ForbiddenException;
 import com.example.demo.model.entity.*;
+import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.io.request.CreateCommentRequest;
 import com.example.demo.model.io.request.CreateRatingRequest;
 import com.example.demo.model.io.request.UpdateCommentRequest;
@@ -10,6 +11,7 @@ import com.example.demo.model.io.response.CommentResponse;
 import com.example.demo.model.io.response.InteractionSummaryResponse;
 import com.example.demo.repository.*;
 import com.example.demo.service.intface.IInteractionService;
+import com.example.demo.service.intface.IActivityLogService;
 import com.example.demo.service.strategy.EntityInteractionStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +33,7 @@ public class InteractionService implements IInteractionService {
     private final RatingRepository ratingRepository;
     private final CommentRepository commentRepository;
     private final EntityInteractionStrategyFactory strategyFactory;
+    private final IActivityLogService activityLogService;
 
     @Override
     public void addRating(String entityType, Long entityId, CreateRatingRequest request, Long userId) {
@@ -52,7 +55,12 @@ public class InteractionService implements IInteractionService {
                 .build();
 
         strategy.setEntityForRating(rating, entityId);
-        ratingRepository.save(rating);
+        Rating savedRating = ratingRepository.save(rating);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        String description = String.valueOf(request.getRatingValue()); // Giữ rating value cho frontend
+        activityLogService.logActivity(user, ActivityType.RATE_CONTENT, description, entityId);
+        // =========================
     }
 
     @Override
@@ -104,6 +112,13 @@ public class InteractionService implements IInteractionService {
 
         strategy.setEntityForComment(comment, entityId);
         Comment savedComment = commentRepository.save(comment);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        // Chỉ log cho comment chính, không log cho reply để tránh spam
+        if (request.getParentId() == null) {
+            activityLogService.logActivity(user, ActivityType.COMMENT_ON_CONTENT, "", entityId);
+        }
+        // =========================
 
         return mapToCommentResponse(savedComment);
     }

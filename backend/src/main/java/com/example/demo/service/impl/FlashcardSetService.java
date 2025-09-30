@@ -44,6 +44,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final UserRepository userRepository;
     private final INotificationService notificationService;
     private final IInvitationEmailService invitationEmailService;
+    private final IActivityLogService activityLogService;
 
     @Override
     @Cacheable(value = "allFlashcardSets")
@@ -149,8 +150,13 @@ public class FlashcardSetService implements IFlashcardSetService {
             flashcardSet.getFlashcards().add(flashcard);
         }
 
-        flashcardSet = flashcardSetRepository.save(flashcardSet);
-        return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
+        FlashcardSet savedFlashcardSet = flashcardSetRepository.save(flashcardSet);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        activityLogService.logActivity(owner, ActivityType.CREATE_FLASHCARD_SET, "", savedFlashcardSet.getId());
+        // =========================
+
+        return flashcardSetMapper.mapToFlashcardSetResponse(savedFlashcardSet);
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.example.demo.model.enums.Category;
 import com.example.demo.model.enums.NotificationType;
 import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
+import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.io.request.quiz.*;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
@@ -20,6 +21,7 @@ import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.intface.IInvitationEmailService;
 import com.example.demo.service.intface.INotificationService;
+import com.example.demo.service.intface.IActivityLogService;
 import com.example.demo.service.template.QuizSetAIService;
 import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IQuizSetService;
@@ -45,6 +47,7 @@ public class QuizSetService implements IQuizSetService {
     private final UserRepository userRepository;
     private final INotificationService notificationService;
     private final IInvitationEmailService invitationEmailService;
+    private final IActivityLogService activityLogService;
 
     @Override
     @CacheEvict(value = "quizSet", key = "#id")
@@ -206,8 +209,13 @@ public class QuizSetService implements IQuizSetService {
             quizSet.getQuestions().add(question);
         }
 
-        quizSet = quizSetRepository.save(quizSet);
-        return quizSetMapper.mapToQuizSetResponse(quizSet);
+        QuizSet savedQuizSet = quizSetRepository.save(quizSet);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        activityLogService.logActivity(owner, ActivityType.CREATE_QUIZ_SET, "", savedQuizSet.getId());
+        // ============================
+
+        return quizSetMapper.mapToQuizSetResponse(savedQuizSet);
     }
 
     @Override
