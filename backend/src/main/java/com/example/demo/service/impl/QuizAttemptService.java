@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.model.entity.User;
 import com.example.demo.model.entity.quiz.*;
+import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.io.dto.QuestionReview;
 import com.example.demo.model.io.dto.QuizAnswerDTO;
 import com.example.demo.model.io.dto.QuizAttemptDetailResponse;
@@ -13,6 +14,7 @@ import com.example.demo.repository.QuizAttemptRepository;
 import com.example.demo.repository.QuizSetRepository;
 import com.example.demo.repository.UserAnswerRepository;
 import com.example.demo.service.intface.IQuizAttemptService;
+import com.example.demo.service.intface.IActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,7 @@ public class QuizAttemptService implements IQuizAttemptService {
     private final QuizAttemptRepository quizAttemptRepository;
     private final QuizSetRepository quizSetRepository;
     private final UserAnswerRepository userAnswerRepository;
+    private final IActivityLogService activityLogService;
 
     @Override
     public StartQuizResponse startQuiz(Long quizSetId, User user) {
@@ -104,7 +107,14 @@ public class QuizAttemptService implements IQuizAttemptService {
         attempt.setScore(score);
         attempt.setCompletedAt(LocalDateTime.now());
 
-        return quizAttemptRepository.save(attempt);
+        QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);
+
+        // === GHI LOG HOẠT ĐỘNG ===
+        String description = String.format("%.1f", score); // Chỉ giữ score cho frontend
+        activityLogService.logActivity(attempt.getUser(), ActivityType.ATTEMPT_QUIZ, description, attempt.getQuizSet().getId());
+        // =========================
+
+        return savedAttempt;
     }
 
     @Override
