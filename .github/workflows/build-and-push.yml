@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Cho phép chạy thủ công từ tab Actions
+      - develop
+  workflow_dispatch:
 
 jobs:
-  # --- GIAI ĐOẠN 1: BUILD & PUSH IMAGE ---
   build:
     runs-on: ubuntu-latest
     steps:
@@ -23,13 +23,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Determine Image Tags
+        id: docker_meta
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "SPRING_TAG=hieuphi/springapp:latest" >> $GITHUB_ENV
+            echo "FLASK_TAG=hieuphi/flaskapp:latest" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "SPRING_TAG=hieuphi/springapp:dev" >> $GITHUB_ENV
+            echo "FLASK_TAG=hieuphi/flaskapp:dev" >> $GITHUB_ENV
+          fi
+
       - name: Build and push Spring Boot image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: hieuphi/springapp:latest
+          tags: ${{ env.SPRING_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -39,34 +50,42 @@ jobs:
           context: ./flask-service
           file: ./flask-service/Dockerfile
           push: true
-          tags: hieuphi/flaskapp:latest
+          tags: ${{ env.FLASK_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # --- GIAI ĐOẠN 2: DEPLOY LÊN MÁY CHỦ ---
-  deploy:
-    # Job này chỉ chạy sau khi job 'build' thành công
+  deploy_prod:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: SSH to server and deploy
+      - name: SSH to Production Server and Deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST_IP }}
-          username: ${{ secrets.USERNAME }}
+          host: ${{ secrets.HOST_IP_PROD }}
+          username: ${{ secrets.USERNAME_PROD }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Di chuyển đến thư mục project trên máy chủ
-            cd knowva
+            cd /home/azureuser/knowva
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml down --remove-orphans
+            docker-compose -f docker-compose.prod.yml up -d
+            docker image prune -af
 
-            # Tải về các image mới nhất từ Docker Hub
-            docker-compose pull
-
-            # Dừng và xóa container cũ trước khi tạo mới
-            docker-compose down --remove-orphans
-
-            # Khởi động lại các container với image mới
-            docker-compose up -d
-
-            # Dọn dẹp các image cũ không còn được sử dụng
+  deploy_dev:
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH to Staging Server and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_IP_DEV }}
+          username: ${{ secrets.USERNAME_DEV }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd knowva-dev
+            docker-compose -f docker-compose.dev.yml pull
+            docker-compose -f docker-compose.dev.yml down --remove-orphans
+            docker-compose -f docker-compose.dev.yml up -d
             docker image prune -af
