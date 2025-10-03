@@ -14,6 +14,7 @@ import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.io.request.quiz.*;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizAccessControlRepository;
@@ -275,6 +276,28 @@ public class QuizSetService implements IQuizSetService {
         );
 
         quizAccessControlRepository.save(accessControl);
+    }
+
+    @Override
+    public List<InvitedUserResponse> getInvitedUsers(Long quizSetId) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        QuizSet quizSet = quizSetRepository.findById(quizSetId)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
+
+        if (!quizSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can view the list of invited users.");
+        }
+
+        List<QuizAccessControl> accessControls = quizAccessControlRepository.findAllByQuizSetId(quizSetId);
+
+        return accessControls.stream()
+                .map(ac -> InvitedUserResponse.builder()
+                        .userId(ac.getInvitedUser().getId())
+                        .username(ac.getInvitedUser().getAccount().getUsername())
+                        .avatarUrl(ac.getInvitedUser().getAvatarUrl())
+                        .permission(ac.getPermission())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private void checkAccessPermission(QuizSet quizSet, User currentUser, String token, Permission requiredPermission) {

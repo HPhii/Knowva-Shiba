@@ -5,6 +5,7 @@ import com.example.demo.model.enums.Permission;
 import com.example.demo.model.io.request.quiz.CreateQuizSetRequest;
 import com.example.demo.model.io.request.quiz.SaveQuizSetRequest;
 import com.example.demo.model.io.request.quiz.UpdateQuizSetRequest;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,4 +22,5 @@ public interface IQuizSetService {
     QuizSetResponse updateQuizSet(Long quizSetId, UpdateQuizSetRequest request, String token);
     void inviteUserToQuizSet(Long quizSetId, Long invitedUserId, Permission permission);
     List<QuizSetResponse> getQuizSetsByCategory(Category category);
+    List<InvitedUserResponse> getInvitedUsers(Long quizSetId);
 }

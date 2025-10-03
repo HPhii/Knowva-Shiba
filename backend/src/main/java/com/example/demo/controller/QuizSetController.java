@@ -6,6 +6,7 @@ import com.example.demo.model.io.request.InviteUserRequest;
 import com.example.demo.model.io.request.quiz.CreateQuizSetRequest;
 import com.example.demo.model.io.request.quiz.SaveQuizSetRequest;
 import com.example.demo.model.io.request.quiz.UpdateQuizSetRequest;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.service.intface.IAccountService;
@@ -144,5 +145,11 @@ public class QuizSetController {
             @Parameter(description = "Tên category") @PathVariable Category category) {
         List<QuizSetResponse> responses = quizSetService.getQuizSetsByCategory(category);
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}/invited-users")
+    @Operation(summary = "Lấy danh sách người dùng được mời vào Quiz Set", description = "Chỉ chủ sở hữu mới có thể xem danh sách này.")
+    public ResponseEntity<List<InvitedUserResponse>> getInvitedUsers(@PathVariable Long id) {
+        return ResponseEntity.ok(quizSetService.getInvitedUsers(id));
     }
 }

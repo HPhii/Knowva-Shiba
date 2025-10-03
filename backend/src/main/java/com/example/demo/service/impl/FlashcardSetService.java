@@ -9,6 +9,7 @@ import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.enums.*;
 import com.example.demo.model.io.request.flashcard.*;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
@@ -204,6 +205,28 @@ public class FlashcardSetService implements IFlashcardSetService {
         flashcardSet.setFlashcards(updatedFlashcards);
         flashcardSet = flashcardSetRepository.save(flashcardSet);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
+    }
+
+    @Override
+    public List<InvitedUserResponse> getInvitedUsers(Long flashcardSetId) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        if (!flashcardSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can view the list of invited users.");
+        }
+
+        List<FlashcardAccessControl> accessControls = flashcardAccessControlRepository.findAllByFlashcardSetId(flashcardSetId);
+
+        return accessControls.stream()
+                .map(ac -> InvitedUserResponse.builder()
+                        .userId(ac.getInvitedUser().getId())
+                        .username(ac.getInvitedUser().getAccount().getUsername())
+                        .avatarUrl(ac.getInvitedUser().getAvatarUrl())
+                        .permission(ac.getPermission())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -26,6 +26,7 @@ public class FlashcardSetManualMapper {
         return new FlashcardSetResponse(
                 flashcardSet.getId(),
                 flashcardSet.getOwner().getId(),
+                flashcardSet.getOwner().getAccount().getUsername(),
                 flashcardSet.getTitle(),
                 flashcardSet.getDescription(),
                 flashcardSet.getSourceType(),
@@ -34,7 +35,9 @@ public class FlashcardSetManualMapper {
                 flashcardSet.getVisibility(),
                 flashcardSet.getCategory(),
                 flashcardResponses,
-                flashcardSet.getAccessToken()
+                flashcardSet.getAccessToken(),
+                flashcardSet.getCreatedAt(),
+                flashcardSet.getUpdatedAt()
         );
     }
 
