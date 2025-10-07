@@ -6,9 +6,11 @@ import com.example.demo.model.entity.quiz.QuizSet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface QuizAccessControlRepository extends JpaRepository<QuizAccessControl, Long> {
     Optional<QuizAccessControl> findByQuizSetAndInvitedUser(QuizSet quizSet, User invitedUser);
+    List<QuizAccessControl> findAllByQuizSetId(Long quizSetId);
 }

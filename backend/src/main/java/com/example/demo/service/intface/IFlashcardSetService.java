@@ -7,6 +7,7 @@ import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SubmitExamModeRequest;
 import com.example.demo.model.io.request.flashcard.UpdateFlashcardSetRequest;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
@@ -27,4 +28,5 @@ public interface IFlashcardSetService {
     SimplifiedQuizSetResponse generateQuizMode(Long flashcardSetId, String language, String questionType, int maxQuestions);
     void inviteUserToFlashcardSet(Long flashcardSetId, Long invitedUserId, Permission permission);
     List<FlashcardSetResponse> getFlashcardSetsByCategory(Category category);
+    List<InvitedUserResponse> getInvitedUsers(Long flashcardSetId);
 }

@@ -1,6 +1,7 @@
 package com.example.demo.model.io.response.object;
 
 import com.example.demo.model.enums.Gender;
+import com.example.demo.model.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +24,5 @@ public class UserProfileResponse {
     private Boolean isVerified;
     private Integer vipDaysLeft;
     private UserStatsResponse stats;
+    private Role role;
 }

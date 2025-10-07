@@ -13,11 +13,13 @@ import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IEmailService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ public class AccountService implements IAccountService {
     private final IEmailService emailService;
 
     @Override
+    @CacheEvict(value = "userProfile", key = "#id")
     public void banUser(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + id));
@@ -38,10 +41,24 @@ public class AccountService implements IAccountService {
     }
 
     @Override
+    @CacheEvict(value = "userProfile", key = "#accountId")
     public void upgradeToPremium(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + accountId));
         account.setRole(Role.VIP);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime maxVipEndDate = now.plusMonths(12);
+        if (account.getVipEndDate() != null && account.getVipEndDate().isAfter(now)) {
+            LocalDateTime proposedEndDate = account.getVipEndDate().plusMonths(1);
+            if (proposedEndDate.isAfter(maxVipEndDate)) {
+                account.setVipEndDate(maxVipEndDate);
+            } else {
+                account.setVipEndDate(proposedEndDate);
+            }
+        } else {
+            account.setVipStartDate(now);
+            account.setVipEndDate(now.plusMonths(1));
+        }
         accountRepository.save(account);
     }
 
@@ -142,7 +159,7 @@ public class AccountService implements IAccountService {
 
         // Generate OTP
         String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
-        long expirationTime = System.currentTimeMillis() +  15 * 60 * 1000L;
+        long expirationTime = System.currentTimeMillis() + 15 * 60 * 1000L;
 
         // Set OTP fields
         if ("verify".equals(type)) {

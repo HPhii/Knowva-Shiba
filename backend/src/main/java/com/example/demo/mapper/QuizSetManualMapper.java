@@ -24,6 +24,7 @@ public class QuizSetManualMapper {
         return new QuizSetResponse(
                 quizSet.getId(),
                 quizSet.getOwner().getId(),
+                quizSet.getOwner().getAccount().getUsername(),
                 quizSet.getTitle(),
                 quizSet.getDescription(),
                 quizSet.getSourceType(),
@@ -33,7 +34,9 @@ public class QuizSetManualMapper {
                 quizSet.getVisibility(),
                 quizSet.getCategory(),
                 quizSet.getTimeLimit(),
-                questionResponses
+                questionResponses,
+                quizSet.getCreatedAt(),
+                quizSet.getUpdatedAt()
         );
     }
 
