@@ -112,16 +112,16 @@ public class Filter extends OncePerRequestFilter {
                 return;
             }
 
-            Claims claims = Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY)))
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            String role = claims.get("role", String.class);
-            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+//            Claims claims = Jwts.parser()
+//                    .verifyWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY)))
+//                    .build()
+//                    .parseSignedClaims(token)
+//                    .getPayload();
+//            String role = claims.get("role", String.class);
+//            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
             UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(account, null, authorities);
+                    new UsernamePasswordAuthenticationToken(account, null, account.getAuthorities());
 
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 

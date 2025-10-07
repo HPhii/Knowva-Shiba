@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AuthException;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.FlashcardSetManualMapper;
 import com.example.demo.model.entity.Account;
@@ -48,9 +49,12 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final IActivityLogService activityLogService;
 
     @Override
-    @Cacheable(value = "allFlashcardSets")
     public List<FlashcardSetResponse> getAllFlashcardSets() {
-        User currentUser = accountService.getCurrentAccount().getUser();
+        User currentUser = null;
+        try {
+            currentUser = accountService.getCurrentAccount().getUser();
+        } catch (AuthException e) {
+        }
         List<FlashcardSet> allFlashcardSets = flashcardSetRepository.findAll();
         return getFlashcardSetResponses(currentUser, allFlashcardSets);
     }
@@ -72,16 +76,23 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     private List<FlashcardSetResponse> getFlashcardSetResponses(User currentUser, List<FlashcardSet> allFlashcardSets) {
-        List<FlashcardSet> accessibleFlashcardSets = allFlashcardSets.stream()
-                .filter(flashcardSet -> {
-                    try {
-                        checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
-                        return true;
-                    } catch (SecurityException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        List<FlashcardSet> accessibleFlashcardSets;
+        if (currentUser == null) {
+            accessibleFlashcardSets = allFlashcardSets.stream()
+                    .filter(flashcardSet -> flashcardSet.getVisibility() == Visibility.PUBLIC)
+                    .collect(Collectors.toList());
+        } else {
+            accessibleFlashcardSets = allFlashcardSets.stream()
+                    .filter(flashcardSet -> {
+                        try {
+                            checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
+                            return true;
+                        } catch (SecurityException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
         return flashcardSetMapper.mapToFlashcardSetResponseList(accessibleFlashcardSets);
     }
 

@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AuthException;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
 import com.example.demo.model.entity.Account;
@@ -85,24 +86,35 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    @Cacheable(value = "allQuizSets")
     public List<QuizSetResponse> getAllQuizSets() {
-        User currentUser = accountService.getCurrentAccount().getUser();
+        User currentUser = null;
+        try {
+            currentUser = accountService.getCurrentAccount().getUser();
+        } catch (AuthException e) {
+            // Bỏ qua lỗi, người dùng này là anonymous, currentUser vẫn là null
+        }
         List<QuizSet> allQuizSets = quizSetRepository.findAll();
         return getQuizSetResponses(currentUser, allQuizSets);
     }
 
     private List<QuizSetResponse> getQuizSetResponses(User currentUser, List<QuizSet> allQuizSets) {
-        List<QuizSet> accessibleQuizSets = allQuizSets.stream()
-                .filter(quizSet -> {
-                    try {
-                        checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
-                        return true;
-                    } catch (SecurityException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        List<QuizSet> accessibleQuizSets;
+        if (currentUser == null) {
+            accessibleQuizSets = allQuizSets.stream()
+                    .filter(quizSet -> quizSet.getVisibility() == Visibility.PUBLIC)
+                    .collect(Collectors.toList());
+        } else {
+            accessibleQuizSets = allQuizSets.stream()
+                    .filter(quizSet -> {
+                        try {
+                            checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
+                            return true;
+                        } catch (SecurityException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
         return quizSetMapper.mapToQuizSetResponseList(accessibleQuizSets);
     }
 

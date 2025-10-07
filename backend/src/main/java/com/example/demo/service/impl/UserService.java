@@ -118,14 +118,15 @@ public class UserService implements IUserService {
                 .phoneNumber(user.getPhoneNumber())
                 .gender(user.getGender())
                 .avatarUrl(user.getAvatarUrl())
-                .isVerified(user.getAccount().getIsVerified()) // <-- Thêm dòng này
+                .isVerified(user.getAccount().getIsVerified())
                 .vipDaysLeft(vipDaysLeft)
                 .stats(stats)
+                .role(user.getAccount().getRole())
                 .build();
     }
 
     @Override
-    @CacheEvict(value = {"userProfile", "users"}, allEntries = true)
+    @CacheEvict(value = {"userProfile", "users"}, key = "#id")
     public User deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -135,7 +136,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    @CacheEvict(value = {"userProfile", "users"}, allEntries = true)
+    @CacheEvict(value = {"userProfile", "users"}, key = "#id")
     public UpdateUserProfileDTO updateUserProfile(Long id, UpdateUserProfileDTO updateUserProfileDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
