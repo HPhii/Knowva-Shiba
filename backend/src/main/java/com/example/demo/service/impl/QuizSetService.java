@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AuthException;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.QuizSetManualMapper;
 import com.example.demo.model.entity.Account;
@@ -14,6 +15,7 @@ import com.example.demo.model.enums.Permission;
 import com.example.demo.model.enums.Visibility;
 import com.example.demo.model.enums.ActivityType;
 import com.example.demo.model.io.request.quiz.*;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.quiz.QuizSetResponse;
 import com.example.demo.model.io.response.object.quiz.SimplifiedQuizSetResponse;
 import com.example.demo.repository.QuizAccessControlRepository;
@@ -84,24 +86,35 @@ public class QuizSetService implements IQuizSetService {
     }
 
     @Override
-    @Cacheable(value = "allQuizSets")
     public List<QuizSetResponse> getAllQuizSets() {
-        User currentUser = accountService.getCurrentAccount().getUser();
+        User currentUser = null;
+        try {
+            currentUser = accountService.getCurrentAccount().getUser();
+        } catch (AuthException e) {
+            // Bỏ qua lỗi, người dùng này là anonymous, currentUser vẫn là null
+        }
         List<QuizSet> allQuizSets = quizSetRepository.findAll();
         return getQuizSetResponses(currentUser, allQuizSets);
     }
 
     private List<QuizSetResponse> getQuizSetResponses(User currentUser, List<QuizSet> allQuizSets) {
-        List<QuizSet> accessibleQuizSets = allQuizSets.stream()
-                .filter(quizSet -> {
-                    try {
-                        checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
-                        return true;
-                    } catch (SecurityException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        List<QuizSet> accessibleQuizSets;
+        if (currentUser == null) {
+            accessibleQuizSets = allQuizSets.stream()
+                    .filter(quizSet -> quizSet.getVisibility() == Visibility.PUBLIC)
+                    .collect(Collectors.toList());
+        } else {
+            accessibleQuizSets = allQuizSets.stream()
+                    .filter(quizSet -> {
+                        try {
+                            checkAccessPermission(quizSet, currentUser, null, Permission.VIEW);
+                            return true;
+                        } catch (SecurityException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
         return quizSetMapper.mapToQuizSetResponseList(accessibleQuizSets);
     }
 
@@ -275,6 +288,28 @@ public class QuizSetService implements IQuizSetService {
         );
 
         quizAccessControlRepository.save(accessControl);
+    }
+
+    @Override
+    public List<InvitedUserResponse> getInvitedUsers(Long quizSetId) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        QuizSet quizSet = quizSetRepository.findById(quizSetId)
+                .orElseThrow(() -> new EntityNotFoundException("QuizSet not found"));
+
+        if (!quizSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can view the list of invited users.");
+        }
+
+        List<QuizAccessControl> accessControls = quizAccessControlRepository.findAllByQuizSetId(quizSetId);
+
+        return accessControls.stream()
+                .map(ac -> InvitedUserResponse.builder()
+                        .userId(ac.getInvitedUser().getId())
+                        .username(ac.getInvitedUser().getAccount().getUsername())
+                        .avatarUrl(ac.getInvitedUser().getAvatarUrl())
+                        .permission(ac.getPermission())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private void checkAccessPermission(QuizSet quizSet, User currentUser, String token, Permission requiredPermission) {

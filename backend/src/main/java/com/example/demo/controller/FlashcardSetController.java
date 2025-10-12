@@ -7,6 +7,7 @@ import com.example.demo.model.io.request.flashcard.CreateFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SaveFlashcardSetRequest;
 import com.example.demo.model.io.request.flashcard.SubmitExamModeRequest;
 import com.example.demo.model.io.request.flashcard.UpdateFlashcardSetRequest;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
@@ -175,5 +176,11 @@ public class FlashcardSetController {
             @Parameter(description = "Tên danh mục") @PathVariable Category category) {
         List<FlashcardSetResponse> responses = flashcardSetService.getFlashcardSetsByCategory(category);
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}/invited-users")
+    @Operation(summary = "Lấy danh sách người dùng được mời vào Flashcard Set", description = "Chỉ chủ sở hữu mới có thể xem danh sách này.")
+    public ResponseEntity<List<InvitedUserResponse>> getInvitedUsers(@PathVariable Long id) {
+        return ResponseEntity.ok(flashcardSetService.getInvitedUsers(id));
     }
 }

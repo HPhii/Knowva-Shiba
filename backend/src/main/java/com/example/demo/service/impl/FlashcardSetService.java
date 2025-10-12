@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.AuthException;
 import com.example.demo.exception.EntityNotFoundException;
 import com.example.demo.mapper.FlashcardSetManualMapper;
 import com.example.demo.model.entity.Account;
@@ -9,6 +10,7 @@ import com.example.demo.model.entity.flashcard.FlashcardAccessControl;
 import com.example.demo.model.entity.flashcard.FlashcardSet;
 import com.example.demo.model.enums.*;
 import com.example.demo.model.io.request.flashcard.*;
+import com.example.demo.model.io.response.object.InvitedUserResponse;
 import com.example.demo.model.io.response.object.flashcard.ExamModeFeedbackResponse;
 import com.example.demo.model.io.response.object.flashcard.FlashcardSetResponse;
 import com.example.demo.model.io.response.object.flashcard.SimplifiedFlashcardSetResponse;
@@ -47,9 +49,12 @@ public class FlashcardSetService implements IFlashcardSetService {
     private final IActivityLogService activityLogService;
 
     @Override
-    @Cacheable(value = "allFlashcardSets")
     public List<FlashcardSetResponse> getAllFlashcardSets() {
-        User currentUser = accountService.getCurrentAccount().getUser();
+        User currentUser = null;
+        try {
+            currentUser = accountService.getCurrentAccount().getUser();
+        } catch (AuthException e) {
+        }
         List<FlashcardSet> allFlashcardSets = flashcardSetRepository.findAll();
         return getFlashcardSetResponses(currentUser, allFlashcardSets);
     }
@@ -71,16 +76,23 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     private List<FlashcardSetResponse> getFlashcardSetResponses(User currentUser, List<FlashcardSet> allFlashcardSets) {
-        List<FlashcardSet> accessibleFlashcardSets = allFlashcardSets.stream()
-                .filter(flashcardSet -> {
-                    try {
-                        checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
-                        return true;
-                    } catch (SecurityException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        List<FlashcardSet> accessibleFlashcardSets;
+        if (currentUser == null) {
+            accessibleFlashcardSets = allFlashcardSets.stream()
+                    .filter(flashcardSet -> flashcardSet.getVisibility() == Visibility.PUBLIC)
+                    .collect(Collectors.toList());
+        } else {
+            accessibleFlashcardSets = allFlashcardSets.stream()
+                    .filter(flashcardSet -> {
+                        try {
+                            checkAccessPermission(flashcardSet, currentUser, null, Permission.VIEW);
+                            return true;
+                        } catch (SecurityException e) {
+                            return false;
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
         return flashcardSetMapper.mapToFlashcardSetResponseList(accessibleFlashcardSets);
     }
 
@@ -204,6 +216,28 @@ public class FlashcardSetService implements IFlashcardSetService {
         flashcardSet.setFlashcards(updatedFlashcards);
         flashcardSet = flashcardSetRepository.save(flashcardSet);
         return flashcardSetMapper.mapToFlashcardSetResponse(flashcardSet);
+    }
+
+    @Override
+    public List<InvitedUserResponse> getInvitedUsers(Long flashcardSetId) {
+        User currentUser = accountService.getCurrentAccount().getUser();
+        FlashcardSet flashcardSet = flashcardSetRepository.findById(flashcardSetId)
+                .orElseThrow(() -> new EntityNotFoundException("FlashcardSet not found"));
+
+        if (!flashcardSet.getOwner().getId().equals(currentUser.getId())) {
+            throw new SecurityException("Only the owner can view the list of invited users.");
+        }
+
+        List<FlashcardAccessControl> accessControls = flashcardAccessControlRepository.findAllByFlashcardSetId(flashcardSetId);
+
+        return accessControls.stream()
+                .map(ac -> InvitedUserResponse.builder()
+                        .userId(ac.getInvitedUser().getId())
+                        .username(ac.getInvitedUser().getAccount().getUsername())
+                        .avatarUrl(ac.getInvitedUser().getAvatarUrl())
+                        .permission(ac.getPermission())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override
