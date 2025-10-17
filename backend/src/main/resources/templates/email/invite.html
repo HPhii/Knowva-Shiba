@@ -11,5 +11,5 @@
     </blockquote>
     <p>Quyền của bạn là: <strong th:text="${permission}">Xem</strong>.</p>
     <p>Hãy đăng nhập và chấp nhận lời mời để cùng nhau học tập nhé!</p>
-    <a th:href="${'http://localhost:5173/set/' + setId}" class="button">Xem lời mời</a>
+    <a th:href="${(setType == 'Flashcard' ? 'https://www.knowva.me/flashcard/' : 'https://www.knowva.me/quiz/') + setId}" class="button">Xem lời mời</a>
 </div>
