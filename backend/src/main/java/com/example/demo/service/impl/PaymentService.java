@@ -9,6 +9,7 @@ import com.example.demo.model.io.response.object.PaymentResponse;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.intface.IAccountService;
 import com.example.demo.service.intface.IPaymentService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,6 +43,7 @@ public class PaymentService implements IPaymentService {
     private final UserRepository userRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final AccountRepository accountRepository;
+    private final IAccountService accountService;
     private final ObjectMapper objectMapper;
 
     @Value("${server.url}")
@@ -158,14 +160,15 @@ public class PaymentService implements IPaymentService {
                 paymentTransactionRepository.save(transaction);
                 Account account = transaction.getUser().getAccount();
                 LocalDateTime now = LocalDateTime.now();
-                if (account.getRole() == Role.VIP && account.getVipEndDate() != null && account.getVipEndDate().isAfter(now)) {
-                    account.setVipEndDate(account.getVipEndDate().plusDays(30));
-                } else {
-                    account.setRole(Role.VIP);
-                    account.setVipStartDate(now);
-                    account.setVipEndDate(now.plusDays(30));
-                }
-                accountRepository.save(account);
+//                if (account.getRole() == Role.VIP && account.getVipEndDate() != null && account.getVipEndDate().isAfter(now)) {
+//                    account.setVipEndDate(account.getVipEndDate().plusDays(30));
+//                } else {
+//                    account.setRole(Role.VIP);
+//                    account.setVipStartDate(now);
+//                    account.setVipEndDate(now.plusDays(30));
+//                }
+//                accountRepository.save(account);
+                accountService.upgradeToPremium(account.getId());
                 log.info("Successfully processed payment for order: {}", orderCode);
             } else {
                 transaction.setStatus(PaymentTransaction.TransactionStatus.FAILED);
