@@ -32,7 +32,7 @@ public class AccountService implements IAccountService {
     private final IEmailService emailService;
 
     @Override
-    @CacheEvict(value = "userProfile", key = "#id")
+    @CacheEvict(value = {"userProfile", "users"}, allEntries = true, key = "#id")
     public void banUser(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + id));
@@ -41,7 +41,7 @@ public class AccountService implements IAccountService {
     }
 
     @Override
-    @CacheEvict(value = "userProfile", key = "#accountId")
+    @CacheEvict(value = {"userProfile", "users"}, allEntries = true, key = "#accountId")
     public void upgradeToPremium(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found with ID: " + accountId));
