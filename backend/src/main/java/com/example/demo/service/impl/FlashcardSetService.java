@@ -252,7 +252,7 @@ public class FlashcardSetService implements IFlashcardSetService {
     }
 
     @Override
-    @CacheEvict(value = "flashcardSet", key = "#id")
+    @CacheEvict(value = {"flashcardSet", "flashcardSetsOfUser", "allFlashcardSets", "flashcardSetsByCategory"}, allEntries = true)
     public FlashcardSetResponse deleteFlashcardSetById(Long id) {
         User currentUser = accountService.getCurrentAccount().getUser();
         FlashcardSet flashcardSet = flashcardSetRepository.findById(id)

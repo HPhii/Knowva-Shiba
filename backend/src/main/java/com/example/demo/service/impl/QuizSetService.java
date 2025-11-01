@@ -52,7 +52,7 @@ public class QuizSetService implements IQuizSetService {
     private final IActivityLogService activityLogService;
 
     @Override
-    @CacheEvict(value = "quizSet", key = "#id")
+    @CacheEvict(value = {"quizSet", "quizSetsOfUser", "allQuizSets", "quizSetsByCategory"}, allEntries = true)
     public QuizSetResponse deleteQuizSetById(Long id) {
         User currentUser = accountService.getCurrentAccount().getUser();
         QuizSet quizSet = quizSetRepository.findById(id)
