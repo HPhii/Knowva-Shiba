@@ -123,6 +123,7 @@ public class AccountService implements IAccountService {
     }
 
     @Override
+    @CacheEvict(value = "userProfile", allEntries = true)
     public void verifyEmail(String email, String otp) {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found" + email));
