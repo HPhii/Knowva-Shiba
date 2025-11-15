@@ -31,6 +31,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -52,6 +53,9 @@ public class AuthenticationService implements IAuthenticationService {
     private final AccountMapper accountMapper;
     private final IEmailService emailService;
     private final RedisTemplate<String, String> redisTemplate;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
     @Override
     public AccountResponse register(RegisterRequest request) {
@@ -148,7 +152,7 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     public AccountResponse loginGoogle(String googleToken) {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList("472892753586-grlnbpao8omb8dr1hfk57o87iujm54dg.apps.googleusercontent.com"))
+                .setAudience(Collections.singletonList(googleClientId))
                 .build();
 
         GoogleIdToken idToken;
