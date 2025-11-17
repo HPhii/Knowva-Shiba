@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.PaymentLinkStatus;
 
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
@@ -138,6 +139,8 @@ public class PaymentService implements IPaymentService {
     @Override
     public void handleWebhook(String webhookBody) throws Exception {
 
+        log.info("Received PayOS Webhook body: {}", webhookBody);
+
         WebhookData webhookData;
         try {
             webhookData = payOS.webhooks().verify(webhookBody);
@@ -165,7 +168,10 @@ public class PaymentService implements IPaymentService {
         try {
             PaymentLink paymentLinkData = payOS.paymentRequests().get(orderCodeLong);
 
-            if ("PAID".equals(paymentLinkData.getStatus())) {
+            PaymentLinkStatus statusFromAPI = paymentLinkData.getStatus();
+            log.info("Checking transaction status for orderCode: {}. Status from PayOS API: {}", orderCode, statusFromAPI);
+
+            if (statusFromAPI == PaymentLinkStatus.PAID) {
                 transaction.setStatus(PaymentTransaction.TransactionStatus.SUCCESS);
                 paymentTransactionRepository.save(transaction);
 
@@ -174,6 +180,7 @@ public class PaymentService implements IPaymentService {
                 accountService.upgradeToPremium(account.getId());
                 log.info("Successfully processed payment for order: {}", orderCode);
             } else {
+                log.error("Webhook received for order {} but status is NOT 'PAID'. Actual status: '{}'", orderCode, statusFromAPI);
                 transaction.setStatus(PaymentTransaction.TransactionStatus.FAILED);
                 paymentTransactionRepository.save(transaction);
                 log.error("Webhook received for order {} but status is not PAID. Current status from PayOS API: {}", orderCode, paymentLinkData.getStatus());
